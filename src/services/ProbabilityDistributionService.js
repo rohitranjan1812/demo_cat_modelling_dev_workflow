@@ -370,8 +370,8 @@ class ProbabilityDistributionService {
    * @returns {number} TVaR value
    */
   tvarNormal(confidenceLevel, mean, std) {
-    const var = this.varNormal(confidenceLevel, mean, std);
-    const phi = this.pdfNormal(var, mean, std);
+    const varValue = this.varNormal(confidenceLevel, mean, std);
+    const phi = this.pdfNormal(varValue, mean, std);
     return mean + std * phi / (1 - confidenceLevel);
   }
 
@@ -399,14 +399,14 @@ class ProbabilityDistributionService {
         return { rate: 1 / mean };
       case 'gamma':
         // Method of moments for gamma distribution
-        const shape = Math.pow(mean, 2) / variance;
-        const scale = variance / mean;
-        return { shape, scale };
+        const gammaShape = Math.pow(mean, 2) / variance;
+        const gammaScale = variance / mean;
+        return { shape: gammaShape, scale: gammaScale };
       case 'weibull':
         // Approximate method of moments for Weibull
-        const shape = 1.2; // Approximate value
-        const scale = mean / this._gamma(1 + 1 / shape);
-        return { shape, scale };
+        const weibullShape = 1.2; // Approximate value
+        const weibullScale = mean / this._gamma(1 + 1 / weibullShape);
+        return { shape: weibullShape, scale: weibullScale };
       default:
         throw new Error(`Fitting not implemented for distribution '${distributionName}'`);
     }
