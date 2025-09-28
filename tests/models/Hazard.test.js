@@ -2,20 +2,11 @@ const mongoose = require('mongoose');
 const Hazard = require('../../src/models/Hazard');
 
 describe('Hazard Model', () => {
-  beforeAll(async () => {
-    // Connect to test database
-    await mongoose.connect(process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/cat_modeling_test');
-  });
-
-  afterAll(async () => {
-    // Clean up and disconnect
-    await mongoose.connection.db.dropDatabase();
-    await mongoose.disconnect();
-  });
-
   beforeEach(async () => {
     // Clear the collection before each test
-    await Hazard.deleteMany({});
+    if (mongoose.connection.readyState === 1) {
+      await Hazard.deleteMany({});
+    }
   });
 
   describe('Hazard Creation', () => {
