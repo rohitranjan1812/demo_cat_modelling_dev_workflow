@@ -33,3 +33,5 @@ router.get('/vulnerabilities/:id/recommendations', VulnerabilityController.getRi
 module.exports = router;
 
 
+
+

@@ -639,3 +639,5 @@ hazardZoneSchema.methods.getAreaInKm2 = function() {
 module.exports = mongoose.model('HazardZone', hazardZoneSchema);
 
 
+
+

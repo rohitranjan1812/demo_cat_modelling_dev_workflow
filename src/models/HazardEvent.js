@@ -702,3 +702,5 @@ hazardEventSchema.methods.calculateSeverityScore = function() {
 module.exports = mongoose.model('HazardEvent', hazardEventSchema);
 
 
+
+
