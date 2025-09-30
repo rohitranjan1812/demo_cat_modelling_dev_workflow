@@ -4,31 +4,34 @@ const VulnerabilityController = require('../controllers/vulnerabilityController'
 const { validateVulnerability } = require('../validation/vulnerabilitySchemas');
 
 // Vulnerability Routes
-router.get('/vulnerabilities', VulnerabilityController.getAllVulnerabilities);
-router.get('/vulnerabilities/:id', VulnerabilityController.getVulnerabilityById);
-router.post('/vulnerabilities', validateVulnerability, VulnerabilityController.createVulnerability);
-router.put('/vulnerabilities/:id', validateVulnerability, VulnerabilityController.updateVulnerability);
-router.delete('/vulnerabilities/:id', VulnerabilityController.deleteVulnerability);
+// IMPORTANT: Specific routes MUST come before parametrized routes (:id)
 
-// Location-based vulnerability analysis
+// Location-based vulnerability analysis (before :id routes)
 router.get('/vulnerabilities/affecting-location', VulnerabilityController.getVulnerabilitiesAffectingLocation);
 router.get('/vulnerabilities/location-score', VulnerabilityController.calculateLocationVulnerabilityScore);
 router.get('/vulnerabilities/comprehensive-analysis', VulnerabilityController.getComprehensiveVulnerabilityAnalysis);
 
-// Hazard-specific vulnerability analysis
+// Vulnerability statistics and reporting (before :id routes)
+router.get('/vulnerabilities/statistics', VulnerabilityController.getVulnerabilityStatistics);
+
+// Hazard-specific vulnerability analysis (before generic :id routes)
 router.get('/vulnerabilities/by-hazard/:hazardType', VulnerabilityController.getVulnerabilitiesByHazardType);
 
-// Vulnerability statistics and reporting
-router.get('/vulnerabilities/statistics', VulnerabilityController.getVulnerabilityStatistics);
+// Base CRUD operations
+router.get('/vulnerabilities', VulnerabilityController.getAllVulnerabilities);
+router.post('/vulnerabilities', validateVulnerability, VulnerabilityController.createVulnerability);
+
+// Parametrized routes with :id (MUST be after specific routes)
+router.get('/vulnerabilities/:id/validate', VulnerabilityController.validateVulnerabilityAssessment);
+router.get('/vulnerabilities/:id/recommendations', VulnerabilityController.getRiskReductionRecommendations);
+router.get('/vulnerabilities/:id', VulnerabilityController.getVulnerabilityById);
+router.put('/vulnerabilities/:id', validateVulnerability, VulnerabilityController.updateVulnerability);
+router.delete('/vulnerabilities/:id', VulnerabilityController.deleteVulnerability);
 
 // Vulnerability linking and relationships
 router.post('/vulnerabilities/:id/link-hazard', VulnerabilityController.linkVulnerabilityToHazard);
 router.post('/vulnerabilities/:id/link-location', VulnerabilityController.linkVulnerabilityToLocation);
 router.post('/vulnerabilities/:id/link-account', VulnerabilityController.linkVulnerabilityToAccount);
-
-// Vulnerability assessment and validation
-router.get('/vulnerabilities/:id/validate', VulnerabilityController.validateVulnerabilityAssessment);
-router.get('/vulnerabilities/:id/recommendations', VulnerabilityController.getRiskReductionRecommendations);
 
 module.exports = router;
 

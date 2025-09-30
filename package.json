@@ -5,6 +5,10 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
+    "start:backend": "node start-backend.js",
+    "start:frontend": "cd frontend && npm start",
+    "start:all": "start-all.bat",
+    "setup:env": "node setup-environment.js",
     "dev": "nodemon src/index.js",
     "seed": "node src/config/seed-database.js",
     "seed:dev": "NODE_ENV=development node src/config/seed-database.js",
