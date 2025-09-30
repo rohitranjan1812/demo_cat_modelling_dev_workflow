@@ -311,7 +311,6 @@ const SimulationForm: React.FC<SimulationFormProps> = ({ simulation, open, onClo
                       renderTags={(value, getTagProps) =>
                         value.map((option, index) => (
                           <Chip
-                            key={option}
                             label={option}
                             {...getTagProps({ index })}
                             size="small"
@@ -353,7 +352,6 @@ const SimulationForm: React.FC<SimulationFormProps> = ({ simulation, open, onClo
                       renderTags={(value, getTagProps) =>
                         value.map((option, index) => (
                           <Chip
-                            key={option}
                             label={option}
                             {...getTagProps({ index })}
                             size="small"
@@ -387,7 +385,6 @@ const SimulationForm: React.FC<SimulationFormProps> = ({ simulation, open, onClo
                       renderTags={(value, getTagProps) =>
                         value.map((option, index) => (
                           <Chip
-                            key={option}
                             label={option}
                             {...getTagProps({ index })}
                             size="small"

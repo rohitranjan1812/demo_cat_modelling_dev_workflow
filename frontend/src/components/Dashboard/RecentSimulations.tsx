@@ -120,7 +120,7 @@ const RecentSimulations: React.FC = () => {
           <Box sx={{ py: 2 }}>
             <LinearProgress />
           </Box>
-        ) : simulationsData?.data?.length > 0 ? (
+        ) : simulationsData?.data && simulationsData.data.length > 0 ? (
           <List sx={{ p: 0 }}>
             {simulationsData.data.map((simulation: any, index: number) => (
               <motion.div
@@ -194,7 +194,7 @@ const RecentSimulations: React.FC = () => {
                     }
                   />
                 </ListItem>
-                {index < simulationsData.data.length - 1 && <Divider sx={{ my: 1 }} />}
+                {index < (simulationsData?.data?.length ?? 0) - 1 && <Divider sx={{ my: 1 }} />}
               </motion.div>
             ))}
           </List>

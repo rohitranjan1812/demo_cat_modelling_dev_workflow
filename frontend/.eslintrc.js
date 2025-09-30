@@ -2,7 +2,6 @@ module.exports = {
   extends: [
     'react-app',
     'react-app/jest',
-    '@typescript-eslint/recommended',
   ],
   rules: {
     'react-hooks/exhaustive-deps': 'warn',

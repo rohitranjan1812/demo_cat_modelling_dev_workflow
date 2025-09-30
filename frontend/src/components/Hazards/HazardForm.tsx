@@ -310,7 +310,6 @@ const HazardForm: React.FC<HazardFormProps> = ({ hazard, open, onClose, onSave }
                       renderTags={(value, getTagProps) =>
                         value.map((option, index) => (
                           <Chip
-                            key={option}
                             label={option}
                             {...getTagProps({ index })}
                             size="small"
@@ -344,7 +343,6 @@ const HazardForm: React.FC<HazardFormProps> = ({ hazard, open, onClose, onSave }
                       renderTags={(value, getTagProps) =>
                         value.map((option, index) => (
                           <Chip
-                            key={option}
                             label={option}
                             {...getTagProps({ index })}
                             size="small"

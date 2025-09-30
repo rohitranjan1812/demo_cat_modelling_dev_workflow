@@ -78,7 +78,7 @@ const SettingsPage: React.FC = () => {
 
   const handleImport = () => {
     // Implement import functionality
-    toast.info('Import functionality coming soon');
+    toast('Import functionality coming soon', { icon: 'ℹ️' });
   };
 
   return (

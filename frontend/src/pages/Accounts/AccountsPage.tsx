@@ -79,19 +79,19 @@ const AccountsPage: React.FC = () => {
 
   const handleAddAccount = () => {
     // Implement add account functionality
-    toast.info('Add account functionality coming soon');
+    toast('Add account functionality coming soon', { icon: 'ℹ️' });
   };
 
   const handleEditAccount = (account: Account) => {
     setSelectedAccount(account);
     // Implement edit account functionality
-    toast.info('Edit account functionality coming soon');
+    toast('Edit account functionality coming soon', { icon: 'ℹ️' });
   };
 
   const handleViewAccount = (account: Account) => {
     setSelectedAccount(account);
     // Implement view account functionality
-    toast.info('View account functionality coming soon');
+    toast('View account functionality coming soon', { icon: 'ℹ️' });
   };
 
   const handleDeleteAccount = (id: string) => {

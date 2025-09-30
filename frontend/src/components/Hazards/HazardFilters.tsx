@@ -171,7 +171,6 @@ const HazardFilters: React.FC<HazardFiltersProps> = ({ filters, onFilterChange }
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => (
                   <Chip
-                    key={option}
                     label={option}
                     {...getTagProps({ index })}
                     size="small"
@@ -181,7 +180,7 @@ const HazardFilters: React.FC<HazardFiltersProps> = ({ filters, onFilterChange }
             />
           </Grid>
 
-          {/* Country */}
+          {/* Country */}}
           <Grid item xs={12} sm={6} md={3}>
             <Autocomplete
               options={countries}
@@ -198,7 +197,6 @@ const HazardFilters: React.FC<HazardFiltersProps> = ({ filters, onFilterChange }
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => (
                   <Chip
-                    key={option}
                     label={option}
                     {...getTagProps({ index })}
                     size="small"
