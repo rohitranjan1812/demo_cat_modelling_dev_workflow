@@ -2,6 +2,7 @@ const CATSimulationEngine = require('../services/CATSimulationEngine');
 const SimulationRun = require('../models/SimulationRun');
 const SimulationEvent = require('../models/SimulationEvent');
 const { validationResult } = require('express-validator');
+const { useMockDB, mockResponses } = require('../middleware/mockDataHandler');
 
 class SimulationController {
   constructor() {
@@ -277,6 +278,11 @@ class SimulationController {
    */
   async getSimulationRuns(req, res) {
     try {
+      // Return empty data in mock mode
+      if (useMockDB) {
+        return res.json(mockResponses.emptyList(req));
+      }
+      
       const { 
         status, 
         startYear, 
@@ -375,6 +381,11 @@ class SimulationController {
    */
   async getSimulationDashboard(req, res) {
     try {
+      // Return empty dashboard in mock mode
+      if (useMockDB) {
+        return res.json(mockResponses.emptyDashboard());
+      }
+      
       const { 
         timeRange = '30d',
         region,

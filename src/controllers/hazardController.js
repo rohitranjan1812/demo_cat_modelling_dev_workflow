@@ -5,12 +5,17 @@ const HazardScenario = require('../models/HazardScenario');
 const Location = require('../models/Location');
 const Policy = require('../models/Policy');
 const Account = require('../models/Account');
+const { useMockDB, mockResponses } = require('../middleware/mockDataHandler');
 
 // Hazard Controller
 class HazardController {
   // Get all hazards with filtering and pagination
   static async getAllHazards(req, res) {
     try {
+      // Return empty data in mock mode
+      if (useMockDB) {
+        return res.json(mockResponses.emptyList(req));
+      }
       const {
         page = 1,
         limit = 10,
@@ -72,6 +77,13 @@ class HazardController {
   // Get hazard by ID
   static async getHazardById(req, res) {
     try {
+      // Return not found in mock mode
+      if (useMockDB) {
+        return res.status(404).json({
+          success: false,
+          message: 'Hazard not found (mock mode - no data available)'
+        });
+      }
       const { id } = req.params;
       const hazard = await Hazard.findOne({ hazardId: id });
 
@@ -216,6 +228,10 @@ class HazardController {
   // Get hazard statistics
   static async getHazardStatistics(req, res) {
     try {
+      // Return empty stats in mock mode
+      if (useMockDB) {
+        return res.json(mockResponses.emptyStats());
+      }
       const stats = await Hazard.aggregate([
         {
           $group: {

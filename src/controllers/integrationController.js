@@ -1,4 +1,5 @@
 const IntegrationService = require('../services/IntegrationService');
+const { useMockDB, mockResponses } = require('../middleware/mockDataHandler');
 
 /**
  * Integration Controller for unified risk assessment and financial calculation interfaces
@@ -13,6 +14,10 @@ class IntegrationController {
    */
   static async getLocationRiskAssessment(req, res) {
     try {
+      // Return mock data in mock mode
+      if (useMockDB) {
+        return res.json(mockResponses.locationRisk(req));
+      }
       const {
         latitude,
         longitude,
@@ -63,6 +68,10 @@ class IntegrationController {
    */
   static async getAccountRiskAnalysis(req, res) {
     try {
+      // Return mock data in mock mode
+      if (useMockDB) {
+        return res.json(mockResponses.accountRisk(req));
+      }
       const { accountId } = req.params;
       const {
         includeChildAccounts = 'true',
@@ -140,6 +149,10 @@ class IntegrationController {
    */
   static async getRiskDashboard(req, res) {
     try {
+      // Return risk dashboard in mock mode
+      if (useMockDB) {
+        return res.json(mockResponses.riskDashboard());
+      }
       const {
         region,
         hazardTypes = [],

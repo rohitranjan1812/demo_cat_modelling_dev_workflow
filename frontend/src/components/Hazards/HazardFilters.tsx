@@ -180,7 +180,7 @@ const HazardFilters: React.FC<HazardFiltersProps> = ({ filters, onFilterChange }
             />
           </Grid>
 
-          {/* Country */}}
+          {/* Country */}
           <Grid item xs={12} sm={6} md={3}>
             <Autocomplete
               options={countries}

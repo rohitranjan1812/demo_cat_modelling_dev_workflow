@@ -1,5 +1,6 @@
 const Account = require('../models/Account');
 const { accountSchema, accountUpdateSchema, querySchema } = require('../validation/schemas');
+const { useMockDB, mockResponses } = require('../middleware/mockDataHandler');
 
 class AccountController {
   // Create a new account
@@ -58,6 +59,11 @@ class AccountController {
   // Get all accounts with pagination and filtering
   static async getAccounts(req, res) {
     try {
+      // Return empty data in mock mode
+      if (useMockDB) {
+        return res.json(mockResponses.emptyList(req));
+      }
+      
       const { error, value } = querySchema.validate(req.query);
       if (error) {
         return res.status(400).json({
