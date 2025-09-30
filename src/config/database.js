@@ -8,13 +8,15 @@ class DatabaseConnection {
 
   async connect() {
     try {
+      if (!process.env.MONGODB_URI) {
+        throw new Error('MONGODB_URI environment variable is required');
+      }
+      
       const mongoUri = process.env.NODE_ENV === 'test' 
         ? process.env.MONGODB_TEST_URI 
         : process.env.MONGODB_URI;
 
       this.connection = await mongoose.connect(mongoUri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
         maxPoolSize: 10,
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,

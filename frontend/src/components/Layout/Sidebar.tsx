@@ -16,7 +16,7 @@ import {
   Warning as HazardsIcon,
   Security as VulnerabilitiesIcon,
   PlayArrow as SimulationsIcon,
-  Integration as IntegrationIcon,
+  Link as IntegrationIcon,
   People as AccountsIcon,
   Settings as SettingsIcon,
   TrendingUp as AnalyticsIcon,
