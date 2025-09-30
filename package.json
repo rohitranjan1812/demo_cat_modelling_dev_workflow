@@ -12,6 +12,8 @@
     "dev": "nodemon src/index.js",
     "seed": "node src/config/seed-database.js",
     "seed:dev": "NODE_ENV=development node src/config/seed-database.js",
+    "seed:comprehensive": "node src/config/comprehensive-seed.js",
+    "seed:fixed": "node src/config/comprehensive-seed-fixed.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
