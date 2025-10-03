@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../config/mongoose-wrapper');
 
 // Zone boundary schema for complex geographic shapes
 const boundarySchema = new mongoose.Schema({

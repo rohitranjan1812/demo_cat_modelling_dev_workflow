@@ -7,6 +7,7 @@ const router = express.Router();
 // IMPORTANT: Specific routes MUST come before parametrized routes (:accountId)
 
 // Region-specific routes (before :accountId routes)
+router.get('/statistics', AccountController.getStatistics);
 router.get('/region/:region', AccountController.getAccountsByRegion);
 
 // Base CRUD operations

@@ -181,8 +181,11 @@ const SimulationsPage: React.FC = () => {
     setFilters(prev => ({ ...prev, ...tabFilters, page: 1 }));
   };
 
+  const simulations = (simulationsData?.data ?? []) as SimulationRun[];
+  const pagination = simulationsData?.pagination;
+
   // Get running simulations count
-  const runningCount = simulationsData?.data?.filter(s => s.status === 'Running').length || 0;
+  const runningCount = simulations.filter(simulation => simulation.status === 'Running').length;
 
   return (
     <Box sx={{ p: 3, pt: 10 }}>
@@ -296,44 +299,44 @@ const SimulationsPage: React.FC = () => {
       {/* Tab Panels */}
       <TabPanel value={activeTab} index={0}>
         <SimulationList
-          simulations={simulationsData?.data || []}
+          simulations={simulations}
           loading={isLoading}
           onView={handleViewSimulation}
           onCancel={handleCancelSimulation}
-          pagination={simulationsData?.pagination}
+          pagination={pagination}
           onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
         />
       </TabPanel>
 
       <TabPanel value={activeTab} index={1}>
         <SimulationList
-          simulations={simulationsData?.data || []}
+          simulations={simulations.filter((simulation: SimulationRun) => simulation.status === 'Running')}
           loading={isLoading}
           onView={handleViewSimulation}
           onCancel={handleCancelSimulation}
-          pagination={simulationsData?.pagination}
+          pagination={pagination}
           onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
         />
       </TabPanel>
 
       <TabPanel value={activeTab} index={2}>
         <SimulationList
-          simulations={simulationsData?.data || []}
+          simulations={simulations.filter((simulation: SimulationRun) => simulation.status === 'Completed')}
           loading={isLoading}
           onView={handleViewSimulation}
           onCancel={handleCancelSimulation}
-          pagination={simulationsData?.pagination}
+          pagination={pagination}
           onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
         />
       </TabPanel>
 
       <TabPanel value={activeTab} index={3}>
         <SimulationList
-          simulations={simulationsData?.data || []}
+          simulations={simulations.filter((simulation: SimulationRun) => simulation.status === 'Failed')}
           loading={isLoading}
           onView={handleViewSimulation}
           onCancel={handleCancelSimulation}
-          pagination={simulationsData?.pagination}
+          pagination={pagination}
           onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
         />
       </TabPanel>

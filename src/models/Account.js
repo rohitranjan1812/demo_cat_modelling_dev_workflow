@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../config/mongoose-wrapper');
 
 const accountSchema = new mongoose.Schema({
   // Basic Account Information

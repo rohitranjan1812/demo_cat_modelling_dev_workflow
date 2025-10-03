@@ -14,9 +14,16 @@
     "seed:dev": "NODE_ENV=development node src/config/seed-database.js",
     "seed:comprehensive": "node src/config/comprehensive-seed.js",
     "seed:fixed": "node src/config/comprehensive-seed-fixed.js",
+    "seed:production": "node src/config/seed-production.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:backend": "jest tests/backend/api.test.js",
+    "test:backend:crud": "jest tests/backend/crud.test.js",
+    "test:backend:all": "jest tests/backend",
+    "test:ui": "jest tests/ui/selenium.test.js",
+    "test:ui:puppeteer": "jest tests/ui/puppeteer.test.js",
+    "test:all": "npm run test:backend && npm run test:ui:puppeteer"
   },
   "keywords": [
     "cat-modeling",
@@ -42,9 +49,12 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.8",
+    "chromedriver": "^120.0.2",
     "jest": "^29.7.0",
     "mongodb-memory-server": "^10.2.1",
     "nodemon": "^3.0.2",
+    "puppeteer": "^21.0.0",
+    "selenium-webdriver": "^4.35.0",
     "supertest": "^6.3.3"
   }
 }

@@ -7,6 +7,18 @@ const { useMockDB, mockResponses } = require('../middleware/mockDataHandler');
 class SimulationController {
   constructor() {
     this.simulationEngine = new CATSimulationEngine();
+    
+    // Bind all methods to preserve 'this' context
+    this.startSimulation = this.startSimulation.bind(this);
+    this.getSimulationRuns = this.getSimulationRuns.bind(this);
+    this.getSimulationStatus = this.getSimulationStatus.bind(this);
+    this.getSimulationResults = this.getSimulationResults.bind(this);
+    this.getSimulationEvents = this.getSimulationEvents.bind(this);
+    this.getSimulationStatistics = this.getSimulationStatistics.bind(this);
+    this.cancelSimulation = this.cancelSimulation.bind(this);
+    this.exportSimulationData = this.exportSimulationData.bind(this);
+    this.getSimulationDashboard = this.getSimulationDashboard.bind(this);
+    this.getSimulationHealth = this.getSimulationHealth.bind(this);
   }
 
   /**
@@ -278,10 +290,8 @@ class SimulationController {
    */
   async getSimulationRuns(req, res) {
     try {
-      // Return empty data in mock mode
-      if (useMockDB) {
-        return res.json(mockResponses.emptyList(req));
-      }
+      // In mock mode, the enhanced mock database will return sample data
+      // Don't return empty data anymore
       
       const { 
         status, 
@@ -381,10 +391,8 @@ class SimulationController {
    */
   async getSimulationDashboard(req, res) {
     try {
-      // Return empty dashboard in mock mode
-      if (useMockDB) {
-        return res.json(mockResponses.emptyDashboard());
-      }
+      // In mock mode, the enhanced mock database will return sample data
+      // Don't return empty dashboard anymore
       
       const { 
         timeRange = '30d',

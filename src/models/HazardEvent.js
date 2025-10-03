@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../config/mongoose-wrapper');
 
 // Event impact schema for different types of losses
 const eventImpactSchema = new mongoose.Schema({

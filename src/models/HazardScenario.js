@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../config/mongoose-wrapper');
 
 // Scenario parameter schema for different types of parameters
 const scenarioParameterSchema = new mongoose.Schema({

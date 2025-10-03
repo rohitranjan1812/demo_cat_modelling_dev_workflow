@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../config/mongoose-wrapper');
 
 // Financial impact schema for simulation events
 const financialImpactSchema = new mongoose.Schema({

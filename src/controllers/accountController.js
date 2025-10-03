@@ -93,8 +93,7 @@ class AccountController {
       const accounts = await Account.find(filter)
         .sort(sortObj)
         .skip(skip)
-        .limit(limit)
-        .populate('parentAccountId', 'accountId accountName');
+        .limit(limit);
 
       const total = await Account.countDocuments(filter);
 
@@ -123,8 +122,7 @@ class AccountController {
     try {
       const { accountId } = req.params;
 
-      const account = await Account.findOne({ accountId })
-        .populate('parentAccountId', 'accountId accountName');
+      const account = await Account.findOne({ accountId });
 
       if (!account) {
         return res.status(404).json({
@@ -331,7 +329,7 @@ class AccountController {
         .sort(sortObj)
         .skip(skip)
         .limit(limit)
-        .populate('parentAccountId', 'accountId accountName');
+;
 
       const total = await Account.findByRegion(region).countDocuments();
 
@@ -347,6 +345,66 @@ class AccountController {
       });
     } catch (error) {
       console.error('Error fetching accounts by region:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error.message
+      });
+    }
+  }
+
+  // Get account statistics
+  static async getStatistics(req, res) {
+    try {
+      // Return empty stats in mock mode
+      if (useMockDB) {
+        return res.json({
+          success: true,
+          data: {
+            totalAccounts: 0,
+            totalExposure: 0,
+            byType: [],
+            byRegion: [],
+            byRiskProfile: []
+          }
+        });
+      }
+
+      const totalAccounts = await Account.countDocuments();
+      
+      const exposureAgg = await Account.aggregate([
+        { $group: { _id: null, total: { $sum: '$totalExposure' } } }
+      ]);
+      const totalExposure = exposureAgg[0]?.total || 0;
+
+      const byType = await Account.aggregate([
+        { $group: { _id: '$accountType', count: { $sum: 1 }, exposure: { $sum: '$totalExposure' } } },
+        { $sort: { count: -1 } }
+      ]);
+
+      const byRegion = await Account.aggregate([
+        { $unwind: '$regions' },
+        { $group: { _id: '$regions', count: { $sum: 1 }, exposure: { $sum: '$totalExposure' } } },
+        { $sort: { count: -1 } }
+      ]);
+
+      const byRiskProfile = await Account.aggregate([
+        { $group: { _id: '$riskProfile', count: { $sum: 1 }, exposure: { $sum: '$totalExposure' } } },
+        { $sort: { count: -1 } }
+      ]);
+
+      res.json({
+        success: true,
+        data: {
+          totalAccounts,
+          totalExposure,
+          byType,
+          byRegion,
+          byRiskProfile
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching account statistics:', error);
       res.status(500).json({
         success: false,
         message: 'Internal server error',

@@ -57,7 +57,7 @@ const Dashboard: React.FC = () => {
   const stats = [
     {
       title: 'Active Hazards',
-      value: dashboardData?.data?.activeHazards || 0,
+      value: dashboardData?.data?.summary?.hazardCount || riskData?.data?.hazardCount || 0,
       change: '+12%',
       changeType: 'positive' as const,
       icon: <WarningIcon />,
@@ -65,7 +65,7 @@ const Dashboard: React.FC = () => {
     },
     {
       title: 'Vulnerabilities',
-      value: dashboardData?.data?.vulnerabilities || 0,
+      value: dashboardData?.data?.summary?.vulnerabilityCount || riskData?.data?.vulnerabilityCount || 0,
       change: '+5%',
       changeType: 'negative' as const,
       icon: <SecurityIcon />,
@@ -73,7 +73,7 @@ const Dashboard: React.FC = () => {
     },
     {
       title: 'Simulations',
-      value: dashboardData?.data?.totalSimulations || 0,
+      value: dashboardData?.data?.summary?.totalRuns || 0,
       change: '+8%',
       changeType: 'positive' as const,
       icon: <PlayIcon />,

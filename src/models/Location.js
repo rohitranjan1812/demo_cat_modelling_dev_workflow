@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../config/mongoose-wrapper');
 
 const coordinatesSchema = new mongoose.Schema({
   latitude: {

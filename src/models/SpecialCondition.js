@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../config/mongoose-wrapper');
 
 const specialConditionSchema = new mongoose.Schema({
   // Basic Condition Information

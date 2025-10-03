@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../config/mongoose-wrapper');
 
 // Simulation configuration schema
 const simulationConfigSchema = new mongoose.Schema({

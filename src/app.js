@@ -68,6 +68,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({
+    status: 'OK',
     success: true,
     message: 'Cat Modeling Exposure Data Model API is running',
     timestamp: new Date().toISOString(),

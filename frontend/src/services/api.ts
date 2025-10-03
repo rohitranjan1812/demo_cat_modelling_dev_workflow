@@ -258,7 +258,22 @@ class ApiService {
 
   async getSimulationRuns(filters: SimulationFilters = {}): Promise<ApiResponse<SimulationRun[]>> {
     const response = await this.api.get('/simulations/runs', { params: filters });
-    return response.data;
+    const payload = response.data;
+
+    if (payload?.data && !Array.isArray(payload.data)) {
+      const { simulationRuns = [], pagination } = payload.data as {
+        simulationRuns?: SimulationRun[];
+        pagination?: any;
+      };
+
+      return {
+        ...payload,
+        data: simulationRuns,
+        pagination: pagination ?? payload.pagination,
+      };
+    }
+
+    return payload;
   }
 
   async getSimulationRunById(id: string): Promise<ApiResponse<SimulationRun>> {

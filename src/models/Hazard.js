@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../config/mongoose-wrapper');
 
 // Hazard intensity schema for different measurement scales
 const intensitySchema = new mongoose.Schema({

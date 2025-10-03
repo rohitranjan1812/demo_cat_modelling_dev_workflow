@@ -9,19 +9,28 @@ class DatabaseConnection {
 
   async connect() {
     try {
-      // Use mock database if configured
+      // Use enhanced mock database if configured
       if (this.useMockDB) {
-        console.log('🔧 Using Mock Database (MongoDB not required)');
-        console.log('✅ Mock Database initialized successfully');
-        return { isMock: true };
+        const enhancedMockDB = require('./enhanced-mock-database');
+        console.log('🔧 Using Enhanced Mock Database with sample data');
+        await enhancedMockDB.connect();
+        console.log('✅ Enhanced Mock Database initialized successfully');
+        
+        // Replace mongoose with mock for model creation
+        global.mockMongoose = enhancedMockDB;
+        
+        return { isMock: true, connection: enhancedMockDB };
       }
 
       if (!process.env.MONGODB_URI) {
-        console.warn('⚠️  MONGODB_URI not set. Falling back to mock database...');
+        console.warn('⚠️  MONGODB_URI not set. Falling back to enhanced mock database...');
         this.useMockDB = true;
         process.env.USE_MOCK_DB = 'true';
-        console.log('✅ Mock Database initialized successfully');
-        return { isMock: true };
+        const enhancedMockDB = require('./enhanced-mock-database');
+        await enhancedMockDB.connect();
+        console.log('✅ Enhanced Mock Database initialized successfully');
+        global.mockMongoose = enhancedMockDB;
+        return { isMock: true, connection: enhancedMockDB };
       }
       
       const mongoUri = process.env.NODE_ENV === 'test' 
@@ -54,11 +63,14 @@ class DatabaseConnection {
       return this.connection;
     } catch (error) {
       console.error('❌ Failed to connect to MongoDB:', error.message);
-      console.warn('⚠️  Falling back to mock database...');
+      console.warn('⚠️  Falling back to enhanced mock database...');
       this.useMockDB = true;
       process.env.USE_MOCK_DB = 'true';
-      console.log('✅ Mock Database initialized successfully');
-      return { isMock: true };
+      const enhancedMockDB = require('./enhanced-mock-database');
+      await enhancedMockDB.connect();
+      console.log('✅ Enhanced Mock Database initialized successfully');
+      global.mockMongoose = enhancedMockDB;
+      return { isMock: true, connection: enhancedMockDB };
     }
   }
 
