@@ -107,29 +107,20 @@ const hazardsData = [
     hazardCategory: 'Natural',
     severity: 'Catastrophic',
     probability: 0.02,
-    geographicFootprint: {
+    footprint: {
       centerLatitude: 29.951,
       centerLongitude: -90.0715,
       radius: 500,
-      radiusUnit: 'km',
-      affectedRegions: ['North America'],
-      affectedCountries: ['USA'],
-      affectedStatesProvinces: ['Louisiana', 'Mississippi', 'Alabama']
+      unit: 'km',
+      affectedArea: 785398,
+      areaUnit: 'km2'
     },
     temporal: {
-      startDate: new Date('2005-08-29'),
-      endDate: new Date('2005-08-30'),
-      duration: 1,
-      durationUnit: 'days',
-      season: 'Hurricane Season',
-      peakTime: new Date('2005-08-29T12:00:00Z')
-    },
-    footprint: {
-      impactRadius: 500,
-      impactRadiusUnit: 'km',
-      shape: 'Circular',
-      area: 785398,
-      areaUnit: 'km2'
+      startTime: new Date('2005-08-29T12:00:00Z'),
+      endTime: new Date('2005-08-30T12:00:00Z'),
+      duration: 24,
+      durationUnit: 'hours',
+      peakIntensityTime: new Date('2005-08-29T12:00:00Z')
     },
     intensityMetrics: {
       scale: 'Saffir-Simpson',
@@ -161,29 +152,20 @@ const hazardsData = [
     hazardCategory: 'Natural',
     severity: 'Major',
     probability: 0.05,
-    geographicFootprint: {
+    footprint: {
       centerLatitude: 34.0522,
       centerLongitude: -118.2437,
       radius: 300,
-      radiusUnit: 'km',
-      affectedRegions: ['North America'],
-      affectedCountries: ['USA'],
-      affectedStatesProvinces: ['California']
+      unit: 'km',
+      affectedArea: 282743,
+      areaUnit: 'km2'
     },
     temporal: {
-      startDate: new Date('2024-01-01'),
-      endDate: new Date('2024-01-01'),
-      duration: 1,
-      durationUnit: 'hours',
-      season: 'Year Round',
-      peakTime: new Date('2024-01-01T14:30:00Z')
-    },
-    footprint: {
-      impactRadius: 300,
-      impactRadiusUnit: 'km',
-      shape: 'Elliptical',
-      area: 282743,
-      areaUnit: 'km2'
+      startTime: new Date('2024-01-01T14:30:00Z'),
+      endTime: new Date('2024-01-01T15:30:00Z'),
+      duration: 60,
+      durationUnit: 'minutes',
+      peakIntensityTime: new Date('2024-01-01T14:30:00Z')
     },
     intensityMetrics: {
       scale: 'Richter',
@@ -226,13 +208,11 @@ const vulnerabilitiesData = [
       centerLongitude: -80.1918,
       radius: 50,
       radiusUnit: 'km',
-      area: 7854,
-      areaUnit: 'km2',
       country: 'USA',
       region: 'North America',
       stateProvince: 'Florida',
       city: 'Miami',
-      administrativeLevel: 'City'
+      administrativeLevel: 'Municipal'
     },
     
     // Vulnerability factors
@@ -292,6 +272,7 @@ const vulnerabilitiesData = [
     linkedHazards: [{
       hazardId: 'HAZ-00100001',
       hazardType: 'Hurricane',
+      relationshipType: 'Primary',
       linkStrength: 0.9,
       impactPotential: 'Very High'
     }],
@@ -305,7 +286,7 @@ const vulnerabilitiesData = [
       currency: 'USD',
       implementationTime: 14, // days
       implementationComplexity: 'Medium',
-      status: 'Recommended'
+      status: 'Completed'
     }, {
       measureName: 'Roof Reinforcement',
       measureType: 'Structural',
@@ -314,7 +295,7 @@ const vulnerabilitiesData = [
       currency: 'USD',
       implementationTime: 30, // days
       implementationComplexity: 'High',
-      status: 'Recommended'
+      status: 'Completed'
     }]
   },
   {
@@ -330,13 +311,11 @@ const vulnerabilitiesData = [
       centerLongitude: -122.4194,
       radius: 25,
       radiusUnit: 'km',
-      area: 1963,
-      areaUnit: 'km2',
       country: 'USA',
       region: 'North America',
       stateProvince: 'California',
       city: 'San Francisco',
-      administrativeLevel: 'City'
+      administrativeLevel: 'Municipal'
     },
     
     // Vulnerability factors
@@ -396,6 +375,7 @@ const vulnerabilitiesData = [
     linkedHazards: [{
       hazardId: 'HAZ-00200002',
       hazardType: 'Earthquake',
+      relationshipType: 'Primary',
       linkStrength: 0.95,
       impactPotential: 'Very High'
     }],
@@ -409,7 +389,7 @@ const vulnerabilitiesData = [
       currency: 'USD',
       implementationTime: 180, // days
       implementationComplexity: 'Very High',
-      status: 'Under Consideration'
+      status: 'Planned'
     }, {
       measureName: 'Base Isolation',
       measureType: 'Structural',
@@ -418,7 +398,7 @@ const vulnerabilitiesData = [
       currency: 'USD',
       implementationTime: 545, // days
       implementationComplexity: 'Very High',
-      status: 'Future Planning'
+      status: 'Planned'
     }]
   }
 ];

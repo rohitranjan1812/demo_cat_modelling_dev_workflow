@@ -87,6 +87,39 @@ const HazardsPage: React.FC = () => {
     }
   );
 
+  // Create hazard mutation
+  const createHazardMutation = useMutation(
+    (hazard: Partial<Hazard>) => apiService.createHazard(hazard),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['hazards']);
+        toast.success('Hazard created successfully');
+        setShowForm(false);
+        setSelectedHazard(null);
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Failed to create hazard');
+      },
+    }
+  );
+
+  // Update hazard mutation
+  const updateHazardMutation = useMutation(
+    ({ id, hazard }: { id: string; hazard: Partial<Hazard> }) => 
+      apiService.updateHazard(id, hazard),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['hazards']);
+        toast.success('Hazard updated successfully');
+        setShowForm(false);
+        setSelectedHazard(null);
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Failed to update hazard');
+      },
+    }
+  );
+
   // Delete hazard mutation
   const deleteHazardMutation = useMutation(
     (id: string) => apiService.deleteHazard(id),
@@ -136,6 +169,19 @@ const HazardsPage: React.FC = () => {
   const handleViewHazard = (hazard: Hazard) => {
     setSelectedHazard(hazard);
     setShowDetails(true);
+  };
+
+  const handleSaveHazard = (hazardData: Partial<Hazard>) => {
+    if (selectedHazard) {
+      // Update existing hazard
+      updateHazardMutation.mutate({ 
+        id: selectedHazard._id || selectedHazard.hazardId, 
+        hazard: hazardData 
+      });
+    } else {
+      // Create new hazard
+      createHazardMutation.mutate(hazardData);
+    }
   };
 
   const handleDeleteHazard = (id: string) => {
@@ -388,10 +434,7 @@ const HazardsPage: React.FC = () => {
           hazard={selectedHazard}
           open={showForm}
           onClose={() => setShowForm(false)}
-          onSave={() => {
-            setShowForm(false);
-            queryClient.invalidateQueries(['hazards']);
-          }}
+          onSave={handleSaveHazard}
         />
       )}
 

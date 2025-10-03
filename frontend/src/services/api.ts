@@ -78,6 +78,15 @@ class ApiService {
   // Hazard API methods
   async getHazards(filters: HazardFilters = {}): Promise<ApiResponse<Hazard[]>> {
     const response = await this.api.get('/hazards', { params: filters });
+    // Handle nested data structure from backend
+    if (response.data.success && response.data.data && response.data.data.data) {
+      return {
+        success: response.data.success,
+        message: response.data.message,
+        data: response.data.data.data,
+        pagination: response.data.data.pagination
+      };
+    }
     return response.data;
   }
 
@@ -202,6 +211,15 @@ class ApiService {
   // Vulnerability API methods
   async getVulnerabilities(filters: VulnerabilityFilters = {}): Promise<ApiResponse<Vulnerability[]>> {
     const response = await this.api.get('/vulnerabilities', { params: filters });
+    // Handle nested data structure from backend
+    if (response.data.success && response.data.data && response.data.data.data) {
+      return {
+        success: response.data.success,
+        message: response.data.message,
+        data: response.data.data.data,
+        pagination: response.data.data.pagination
+      };
+    }
     return response.data;
   }
 
@@ -283,11 +301,55 @@ class ApiService {
 
   async getSimulationResults(id: string, filters: any = {}): Promise<ApiResponse<SimulationResults>> {
     const response = await this.api.get(`/simulations/${id}/results`, { params: filters });
+    // Handle nested data structure from backend and transform to expected format
+    if (response.data.success && response.data.data) {
+      const backendResults = response.data.data.results;
+      const transformedResults: SimulationResults = {
+        summary: {
+          totalEvents: backendResults.totalEvents,
+          totalLoss: backendResults.totalLoss,
+          averageLoss: backendResults.averageLoss,
+          maximumLoss: backendResults.maxLoss,
+          returnPeriods: {
+            '10': backendResults.valueAtRisk?.['95'] || 0,
+            '25': backendResults.valueAtRisk?.['95'] || 0,
+            '50': backendResults.valueAtRisk?.['95'] || 0,
+            '100': backendResults.valueAtRisk?.['95'] || 0,
+            '250': backendResults.valueAtRisk?.['99'] || 0,
+            '500': backendResults.valueAtRisk?.['99'] || 0,
+            '1000': backendResults.valueAtRisk?.['99'] || 0,
+          }
+        },
+        events: response.data.data.events || [],
+        statistics: {
+          byHazardType: backendResults.eventsByHazardType || {},
+          bySeverity: backendResults.eventsBySeverity || {},
+          byYear: backendResults.eventsByYear || {},
+          byMonth: {}
+        }
+      };
+      
+      return {
+        success: response.data.success,
+        message: response.data.message,
+        data: transformedResults,
+        pagination: response.data.data.pagination
+      };
+    }
     return response.data;
   }
 
   async getSimulationEvents(id: string, filters: any = {}): Promise<ApiResponse<any[]>> {
     const response = await this.api.get(`/simulations/${id}/events`, { params: filters });
+    // Handle nested data structure from backend
+    if (response.data.success && response.data.data) {
+      return {
+        success: response.data.success,
+        message: response.data.message,
+        data: response.data.data.events || response.data.data,
+        pagination: response.data.data.pagination
+      };
+    }
     return response.data;
   }
 
@@ -386,6 +448,67 @@ class ApiService {
 
   async deleteAccount(id: string): Promise<ApiResponse> {
     const response = await this.api.delete(`/accounts/${id}`);
+    return response.data;
+  }
+
+  // Authentication API methods
+  async login(credentials: { username: string; password: string }): Promise<ApiResponse> {
+    const response = await this.api.post('/auth/login', credentials);
+    return response.data;
+  }
+
+  async logout(refreshToken?: string): Promise<ApiResponse> {
+    const response = await this.api.post('/auth/logout', { refreshToken });
+    return response.data;
+  }
+
+  async refreshToken(refreshToken: string): Promise<ApiResponse> {
+    const response = await this.api.post('/auth/refresh', { refreshToken });
+    return response.data;
+  }
+
+  async verifyToken(): Promise<ApiResponse> {
+    const response = await this.api.get('/auth/verify');
+    return response.data;
+  }
+
+  async getProfile(): Promise<ApiResponse> {
+    const response = await this.api.get('/auth/profile');
+    return response.data;
+  }
+
+  async updateProfile(updates: any): Promise<ApiResponse> {
+    const response = await this.api.put('/auth/profile', updates);
+    return response.data;
+  }
+
+  async changePassword(passwordData: { currentPassword: string; newPassword: string }): Promise<ApiResponse> {
+    const response = await this.api.put('/auth/password', passwordData);
+    return response.data;
+  }
+
+  async getUserPermissions(): Promise<ApiResponse> {
+    const response = await this.api.get('/auth/permissions');
+    return response.data;
+  }
+
+  async getUserSessions(): Promise<ApiResponse> {
+    const response = await this.api.get('/auth/sessions');
+    return response.data;
+  }
+
+  async revokeSessions(): Promise<ApiResponse> {
+    const response = await this.api.post('/auth/revoke-sessions');
+    return response.data;
+  }
+
+  async register(userData: any): Promise<ApiResponse> {
+    const response = await this.api.post('/auth/register', userData);
+    return response.data;
+  }
+
+  async forgotPassword(email: string): Promise<ApiResponse> {
+    const response = await this.api.post('/auth/forgot-password', { email });
     return response.data;
   }
 }

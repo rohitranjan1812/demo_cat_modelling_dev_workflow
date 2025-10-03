@@ -18,28 +18,28 @@ const startSimulationValidation = [
     .isLength({ max: 1000 })
     .withMessage('Simulation description must be less than 1000 characters'),
   
-  body('configuration.startYear')
+  body('startYear')
     .isInt({ min: 1900, max: 3000 })
     .withMessage('Start year must be between 1900 and 3000'),
   
-  body('configuration.endYear')
+  body('endYear')
     .isInt({ min: 1900, max: 3000 })
     .withMessage('End year must be between 1900 and 3000'),
   
-  body('configuration.timeHorizon')
+  body('timeHorizon')
     .isInt({ min: 1 })
     .withMessage('Time horizon must be a positive integer'),
   
-  body('configuration.timeHorizonUnit')
+  body('timeHorizonUnit')
     .isIn(['years', 'months', 'days'])
     .withMessage('Time horizon unit must be years, months, or days'),
   
-  body('configuration.hazardTypes')
+  body('hazardTypes')
     .optional()
     .isArray()
     .withMessage('Hazard types must be an array'),
   
-  body('configuration.hazardTypes.*')
+  body('hazardTypes.*')
     .optional()
     .isIn([
       'Earthquake', 'Hurricane', 'Typhoon', 'Cyclone', 'Tornado', 'Flood', 'Flash Flood',
@@ -53,36 +53,36 @@ const startSimulationValidation = [
     ])
     .withMessage('Invalid hazard type'),
   
-  body('configuration.geographicScope.regions')
+  body('geographicScope.regions')
     .optional()
     .isArray()
     .withMessage('Regions must be an array'),
   
-  body('configuration.geographicScope.regions.*')
+  body('geographicScope.regions.*')
     .optional()
     .isIn(['North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East', 'Africa'])
     .withMessage('Invalid region'),
   
-  body('configuration.exposureScope.currency')
+  body('exposureScope.currency')
     .optional()
     .isIn(['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY', 'INR', 'BRL'])
     .withMessage('Invalid currency'),
   
-  body('configuration.modelingConfig.numberOfSimulations')
+  body('modelingConfig.numberOfSimulations')
     .isInt({ min: 1, max: 1000000 })
     .withMessage('Number of simulations must be between 1 and 1,000,000'),
   
-  body('configuration.modelingConfig.modelProvider')
+  body('modelingConfig.modelProvider')
     .optional()
     .isIn(['RMS', 'AIR', 'CoreLogic', 'Karen Clark', 'JBA', 'Custom', 'Multiple'])
     .withMessage('Invalid model provider'),
   
-  body('configuration.modelingConfig.modelType')
+  body('modelingConfig.modelType')
     .optional()
     .isIn(['Probabilistic', 'Deterministic', 'Scenario', 'Hybrid'])
     .withMessage('Invalid model type'),
   
-  body('configuration.modelingConfig.resolution')
+  body('modelingConfig.resolution')
     .optional()
     .isIn(['High', 'Medium', 'Low', 'Variable'])
     .withMessage('Invalid resolution')

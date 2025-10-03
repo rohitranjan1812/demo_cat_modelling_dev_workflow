@@ -1,517 +1,638 @@
-const math = require('mathjs');
-
 /**
- * Financial Calculation Service for CAT Modeling
- * Provides comprehensive financial risk metrics and KPIs for catastrophe modeling
+ * Financial Calculation Service for CAT Modeling Platform
+ * Implements industry-standard financial risk metrics:
+ * - Expected Loss (EL)
+ * - Value at Risk (VaR) 
+ * - Tail Value at Risk (TVaR)
+ * - Loss Distributions
+ * - Portfolio Risk Metrics
  */
+
 class FinancialCalculationService {
   constructor() {
-    this.currencyRates = new Map();
-    this.initializeCurrencyRates();
+    this.confidenceLevels = [0.90, 0.95, 0.99, 0.995, 0.999];
+    this.defaultCurrency = 'USD';
   }
 
   /**
-   * Initialize currency exchange rates
+   * Calculate Expected Loss (EL) from loss distribution
+   * @param {Array<number>} lossData - Array of loss values
+   * @param {Array<number>} probabilities - Corresponding probabilities (optional)
+   * @returns {number} Expected loss value
    */
-  initializeCurrencyRates() {
-    // Base currency is USD
-    this.currencyRates.set('USD', 1.0);
-    this.currencyRates.set('EUR', 0.85);
-    this.currencyRates.set('GBP', 0.73);
-    this.currencyRates.set('JPY', 110.0);
-    this.currencyRates.set('CAD', 1.25);
-    this.currencyRates.set('AUD', 1.35);
-    this.currencyRates.set('CNY', 6.45);
-    this.currencyRates.set('INR', 75.0);
-    this.currencyRates.set('BRL', 5.2);
-  }
+  calculateExpectedLoss(lossData, probabilities = null) {
+    if (!lossData || lossData.length === 0) return 0;
 
-  /**
-   * Calculate Expected Loss (EL)
-   * @param {Array} events - Array of simulation events
-   * @param {string} currency - Target currency
-   * @returns {Object} Expected loss calculation
-   */
-  calculateExpectedLoss(events, currency = 'USD') {
-    if (!events || events.length === 0) {
-      return {
-        expectedLoss: 0,
-        currency,
-        confidenceInterval: { lower: 0, upper: 0, confidenceLevel: 0.95 },
-        calculationMethod: 'Direct Sum'
-      };
+    if (probabilities && probabilities.length === lossData.length) {
+      // Weighted average using probabilities
+      const totalProb = probabilities.reduce((sum, p) => sum + p, 0);
+      if (totalProb === 0) return 0;
+      
+      return lossData.reduce((sum, loss, index) => 
+        sum + (loss * probabilities[index] / totalProb), 0);
+    } else {
+      // Simple arithmetic mean
+      return lossData.reduce((sum, loss) => sum + loss, 0) / lossData.length;
     }
+  }
 
-    // Convert all losses to target currency
-    const convertedLosses = events.map(event => 
-      this.convertCurrency(event.financialImpact.totalLoss, event.financialImpact.currency, currency)
-    );
-
-    const expectedLoss = convertedLosses.reduce((sum, loss) => sum + loss, 0) / events.length;
+  /**
+   * Calculate Value at Risk (VaR) at specified confidence level
+   * @param {Array<number>} lossData - Array of loss values
+   * @param {number} confidenceLevel - Confidence level (0.95 = 95%)
+   * @returns {number} VaR value
+   */
+  calculateValueAtRisk(lossData, confidenceLevel = 0.95) {
+    if (!lossData || lossData.length === 0) return 0;
     
-    // Calculate confidence interval
-    const confidenceInterval = this.calculateConfidenceInterval(convertedLosses, 0.95);
-
-    return {
-      expectedLoss,
-      currency,
-      confidenceInterval,
-      calculationMethod: 'Direct Sum',
-      totalEvents: events.length,
-      totalLoss: convertedLosses.reduce((sum, loss) => sum + loss, 0)
-    };
-  }
-
-  /**
-   * Calculate Value at Risk (VaR)
-   * @param {Array} events - Array of simulation events
-   * @param {number} confidenceLevel - Confidence level (0-1)
-   * @param {string} currency - Target currency
-   * @returns {Object} VaR calculation
-   */
-  calculateValueAtRisk(events, confidenceLevel = 0.95, currency = 'USD') {
-    if (!events || events.length === 0) {
-      return {
-        valueAtRisk: 0,
-        confidenceLevel,
-        currency,
-        calculationMethod: 'Historical Simulation'
-      };
-    }
-
-    // Convert all losses to target currency and sort
-    const convertedLosses = events.map(event => 
-      this.convertCurrency(event.financialImpact.totalLoss, event.financialImpact.currency, currency)
-    ).sort((a, b) => a - b);
-
-    const index = Math.floor((1 - confidenceLevel) * convertedLosses.length);
-    const valueAtRisk = convertedLosses[index] || 0;
-
-    return {
-      valueAtRisk,
-      confidenceLevel,
-      currency,
-      calculationMethod: 'Historical Simulation',
-      totalEvents: events.length,
-      percentile: (1 - confidenceLevel) * 100
-    };
-  }
-
-  /**
-   * Calculate Tail Value at Risk (TVaR)
-   * @param {Array} events - Array of simulation events
-   * @param {number} confidenceLevel - Confidence level (0-1)
-   * @param {string} currency - Target currency
-   * @returns {Object} TVaR calculation
-   */
-  calculateTailValueAtRisk(events, confidenceLevel = 0.95, currency = 'USD') {
-    if (!events || events.length === 0) {
-      return {
-        tailValueAtRisk: 0,
-        confidenceLevel,
-        currency,
-        calculationMethod: 'Historical Simulation'
-      };
-    }
-
-    // Convert all losses to target currency and sort
-    const convertedLosses = events.map(event => 
-      this.convertCurrency(event.financialImpact.totalLoss, event.financialImpact.currency, currency)
-    ).sort((a, b) => a - b);
-
-    const varIndex = Math.floor((1 - confidenceLevel) * convertedLosses.length);
-    const tailLosses = convertedLosses.slice(varIndex);
+    const sortedLosses = [...lossData].sort((a, b) => a - b);
+    const index = Math.floor((1 - confidenceLevel) * sortedLosses.length);
+    const varIndex = Math.max(0, Math.min(index, sortedLosses.length - 1));
     
-    const tailValueAtRisk = tailLosses.length > 0 
-      ? tailLosses.reduce((sum, loss) => sum + loss, 0) / tailLosses.length
-      : 0;
-
-    return {
-      tailValueAtRisk,
-      confidenceLevel,
-      currency,
-      calculationMethod: 'Historical Simulation',
-      totalEvents: events.length,
-      tailEvents: tailLosses.length,
-      percentile: (1 - confidenceLevel) * 100
-    };
+    return sortedLosses[varIndex] || 0;
   }
 
   /**
-   * Calculate Standard Deviation
-   * @param {Array} events - Array of simulation events
-   * @param {string} currency - Target currency
-   * @returns {Object} Standard deviation calculation
+   * Calculate Tail Value at Risk (TVaR) - Conditional VaR
+   * @param {Array<number>} lossData - Array of loss values
+   * @param {number} confidenceLevel - Confidence level (0.95 = 95%)
+   * @returns {number} TVaR value
    */
-  calculateStandardDeviation(events, currency = 'USD') {
-    if (!events || events.length === 0) {
-      return {
-        standardDeviation: 0,
-        currency,
-        calculationMethod: 'Sample Standard Deviation'
-      };
-    }
-
-    // Convert all losses to target currency
-    const convertedLosses = events.map(event => 
-      this.convertCurrency(event.financialImpact.totalLoss, event.financialImpact.currency, currency)
-    );
-
-    const mean = convertedLosses.reduce((sum, loss) => sum + loss, 0) / convertedLosses.length;
-    const variance = convertedLosses.reduce((sum, loss) => sum + Math.pow(loss - mean, 2), 0) / convertedLosses.length;
-    const standardDeviation = Math.sqrt(variance);
-
-    return {
-      standardDeviation,
-      currency,
-      calculationMethod: 'Sample Standard Deviation',
-      totalEvents: events.length,
-      mean,
-      variance
-    };
+  calculateTailValueAtRisk(lossData, confidenceLevel = 0.95) {
+    if (!lossData || lossData.length === 0) return 0;
+    
+    const sortedLosses = [...lossData].sort((a, b) => a - b);
+    const varIndex = Math.floor((1 - confidenceLevel) * sortedLosses.length);
+    const tailLosses = sortedLosses.slice(varIndex);
+    
+    if (tailLosses.length === 0) return sortedLosses[sortedLosses.length - 1] || 0;
+    
+    return tailLosses.reduce((sum, loss) => sum + loss, 0) / tailLosses.length;
   }
 
   /**
-   * Calculate Risk-Adjusted Exposure
-   * @param {Array} events - Array of simulation events
-   * @param {string} currency - Target currency
-   * @returns {Object} Risk-adjusted exposure calculation
-   */
-  calculateRiskAdjustedExposure(events, currency = 'USD') {
-    if (!events || events.length === 0) {
-      return {
-        riskAdjustedExposure: 0,
-        currency,
-        calculationMethod: 'Exposure Weighted by Risk'
-      };
-    }
-
-    let totalExposure = 0;
-    let totalRiskAdjustedExposure = 0;
-
-    events.forEach(event => {
-      const exposureImpact = event.exposureImpact || [];
-      exposureImpact.forEach(impact => {
-        const convertedExposure = this.convertCurrency(impact.exposureAmount, currency, currency);
-        const riskMultiplier = 1 + (impact.lossRatio || 0);
-        
-        totalExposure += convertedExposure;
-        totalRiskAdjustedExposure += convertedExposure * riskMultiplier;
-      });
-    });
-
-    return {
-      riskAdjustedExposure: totalRiskAdjustedExposure,
-      currency,
-      calculationMethod: 'Exposure Weighted by Risk',
-      totalExposure,
-      riskMultiplier: totalExposure > 0 ? totalRiskAdjustedExposure / totalExposure : 1
-    };
-  }
-
-  /**
-   * Calculate Loss Ratio
-   * @param {Array} events - Array of simulation events
-   * @param {string} currency - Target currency
-   * @returns {Object} Loss ratio calculation
-   */
-  calculateLossRatio(events, currency = 'USD') {
-    if (!events || events.length === 0) {
-      return {
-        lossRatio: 0,
-        currency,
-        calculationMethod: 'Total Loss / Total Exposure'
-      };
-    }
-
-    let totalLoss = 0;
-    let totalExposure = 0;
-
-    events.forEach(event => {
-      const convertedLoss = this.convertCurrency(
-        event.financialImpact.totalLoss, 
-        event.financialImpact.currency, 
-        currency
-      );
-      totalLoss += convertedLoss;
-
-      const exposureImpact = event.exposureImpact || [];
-      exposureImpact.forEach(impact => {
-        const convertedExposure = this.convertCurrency(impact.exposureAmount, currency, currency);
-        totalExposure += convertedExposure;
-      });
-    });
-
-    const lossRatio = totalExposure > 0 ? totalLoss / totalExposure : 0;
-
-    return {
-      lossRatio,
-      currency,
-      calculationMethod: 'Total Loss / Total Exposure',
-      totalLoss,
-      totalExposure
-    };
-  }
-
-  /**
-   * Calculate Diversification Benefit
-   * @param {Array} events - Array of simulation events
-   * @param {string} currency - Target currency
-   * @returns {Object} Diversification benefit calculation
-   */
-  calculateDiversificationBenefit(events, currency = 'USD') {
-    if (!events || events.length === 0) {
-      return {
-        diversificationBenefit: 0,
-        currency,
-        calculationMethod: 'Portfolio Effect'
-      };
-    }
-
-    let totalDiversificationBenefit = 0;
-    let totalLoss = 0;
-
-    events.forEach(event => {
-      const convertedLoss = this.convertCurrency(
-        event.financialImpact.totalLoss, 
-        event.financialImpact.currency, 
-        currency
-      );
-      totalLoss += convertedLoss;
-      totalDiversificationBenefit += event.riskMetrics.diversificationBenefit || 0;
-    });
-
-    const diversificationRatio = totalLoss > 0 ? totalDiversificationBenefit / totalLoss : 0;
-
-    return {
-      diversificationBenefit: totalDiversificationBenefit,
-      currency,
-      calculationMethod: 'Portfolio Effect',
-      totalLoss,
-      diversificationRatio
-    };
-  }
-
-  /**
-   * Calculate Concentration Risk
-   * @param {Array} events - Array of simulation events
-   * @param {string} currency - Target currency
-   * @returns {Object} Concentration risk calculation
-   */
-  calculateConcentrationRisk(events, currency = 'USD') {
-    if (!events || events.length === 0) {
-      return {
-        concentrationRisk: 0,
-        currency,
-        calculationMethod: 'Herfindahl-Hirschman Index'
-      };
-    }
-
-    // Calculate HHI for each event
-    let totalConcentrationRisk = 0;
-    let eventCount = 0;
-
-    events.forEach(event => {
-      const exposureImpact = event.exposureImpact || [];
-      if (exposureImpact.length > 0) {
-        const totalExposure = exposureImpact.reduce((sum, impact) => 
-          sum + this.convertCurrency(impact.exposureAmount, currency, currency), 0
-        );
-
-        if (totalExposure > 0) {
-          const hhi = exposureImpact.reduce((sum, impact) => {
-            const convertedExposure = this.convertCurrency(impact.exposureAmount, currency, currency);
-            const share = convertedExposure / totalExposure;
-            return sum + share * share;
-          }, 0);
-
-          totalConcentrationRisk += hhi;
-          eventCount++;
-        }
-      }
-    });
-
-    const averageConcentrationRisk = eventCount > 0 ? totalConcentrationRisk / eventCount : 0;
-
-    return {
-      concentrationRisk: averageConcentrationRisk,
-      currency,
-      calculationMethod: 'Herfindahl-Hirschman Index',
-      totalEvents: eventCount,
-      riskLevel: this.getRiskLevel(averageConcentrationRisk)
-    };
-  }
-
-  /**
-   * Calculate Comprehensive Risk Metrics
-   * @param {Array} events - Array of simulation events
-   * @param {string} currency - Target currency
-   * @param {Array} confidenceLevels - Array of confidence levels
+   * Calculate comprehensive risk metrics for a portfolio
+   * @param {Array<Object>} events - Array of simulation events
+   * @param {Object} options - Calculation options
    * @returns {Object} Comprehensive risk metrics
    */
-  calculateComprehensiveRiskMetrics(events, currency = 'USD', confidenceLevels = [0.90, 0.95, 0.99]) {
-    const expectedLoss = this.calculateExpectedLoss(events, currency);
-    const standardDeviation = this.calculateStandardDeviation(events, currency);
-    const riskAdjustedExposure = this.calculateRiskAdjustedExposure(events, currency);
-    const lossRatio = this.calculateLossRatio(events, currency);
-    const diversificationBenefit = this.calculateDiversificationBenefit(events, currency);
-    const concentrationRisk = this.calculateConcentrationRisk(events, currency);
+  calculatePortfolioRiskMetrics(events, options = {}) {
+    const {
+      confidenceLevels = this.confidenceLevels,
+      currency = this.defaultCurrency,
+      timeHorizon = 1 // years
+    } = options;
 
-    // Calculate VaR and TVaR for different confidence levels
+    const lossData = events.map(event => 
+      event.financialImpact ? event.financialImpact.totalLoss : 0
+    );
+
+    if (lossData.length === 0) {
+      return this.createEmptyRiskMetrics(currency, timeHorizon);
+    }
+
+    const expectedLoss = this.calculateExpectedLoss(lossData);
+    const standardDeviation = this.calculateStandardDeviation(lossData);
+    const skewness = this.calculateSkewness(lossData);
+    const kurtosis = this.calculateKurtosis(lossData);
+    
+    // Calculate VaR and TVaR for multiple confidence levels
     const varMetrics = {};
     const tvarMetrics = {};
-
+    
     confidenceLevels.forEach(level => {
-      varMetrics[`var_${Math.round(level * 100)}`] = this.calculateValueAtRisk(events, level, currency);
-      tvarMetrics[`tvar_${Math.round(level * 100)}`] = this.calculateTailValueAtRisk(events, level, currency);
+      varMetrics[`VaR_${(level * 100).toFixed(1)}%`] = this.calculateValueAtRisk(lossData, level);
+      tvarMetrics[`TVaR_${(level * 100).toFixed(1)}%`] = this.calculateTailValueAtRisk(lossData, level);
     });
 
+    // Calculate additional risk metrics
+    const maxLoss = Math.max(...lossData);
+    const minLoss = Math.min(...lossData);
+    const median = this.calculateMedian(lossData);
+    const coefficientOfVariation = standardDeviation / expectedLoss;
+    
+    // Risk-adjusted metrics
+    const sharpeRatio = this.calculateSharpeRatio(expectedLoss, standardDeviation);
+    const probabilityOfExceedance = this.calculateProbabilityOfExceedance(lossData, expectedLoss * 2);
+    
     return {
-      expectedLoss,
-      standardDeviation,
-      riskAdjustedExposure,
-      lossRatio,
-      diversificationBenefit,
-      concentrationRisk,
+      summary: {
+        totalEvents: events.length,
+        expectedLoss,
+        standardDeviation,
+        coefficientOfVariation,
+        median,
+        maxLoss,
+        minLoss,
+        currency,
+        timeHorizon
+      },
+      distributionMetrics: {
+        skewness,
+        kurtosis,
+        variance: standardDeviation ** 2
+      },
       valueAtRisk: varMetrics,
       tailValueAtRisk: tvarMetrics,
-      currency,
-      calculationTimestamp: new Date().toISOString(),
-      totalEvents: events.length
+      riskAdjustedMetrics: {
+        sharpeRatio,
+        probabilityOfExceedance,
+        returnOnRiskAdjustedCapital: this.calculateRORACratio(expectedLoss, varMetrics[`VaR_99.5%`])
+      },
+      lossExceedanceCurve: this.calculateLossExceedanceCurve(lossData),
+      calculatedAt: new Date().toISOString(),
+      methodology: 'Monte Carlo Simulation with Historical Calibration'
     };
   }
 
   /**
-   * Calculate Portfolio Risk Metrics
-   * @param {Array} events - Array of simulation events
-   * @param {string} currency - Target currency
-   * @returns {Object} Portfolio risk metrics
+   * Calculate loss exceedance curve
+   * @param {Array<number>} lossData - Array of loss values
+   * @returns {Array<Object>} Exceedance curve points
    */
-  calculatePortfolioRiskMetrics(events, currency = 'USD') {
-    if (!events || events.length === 0) {
-      return {
-        portfolioValue: 0,
-        portfolioRisk: 0,
-        currency,
-        calculationMethod: 'Portfolio Risk Assessment'
-      };
-    }
-
-    // Group events by account
-    const accountGroups = {};
-    events.forEach(event => {
-      const exposureImpact = event.exposureImpact || [];
-      exposureImpact.forEach(impact => {
-        if (!accountGroups[impact.accountId]) {
-          accountGroups[impact.accountId] = [];
-        }
-        accountGroups[impact.accountId].push({
-          eventId: event.eventId,
-          loss: impact.actualLoss,
-          exposure: impact.exposureAmount
-        });
-      });
-    });
-
-    // Calculate portfolio metrics
-    const accountCount = Object.keys(accountGroups).length;
-    let totalPortfolioValue = 0;
-    let totalPortfolioLoss = 0;
-    let portfolioVariance = 0;
-
-    Object.values(accountGroups).forEach(accountEvents => {
-      const accountValue = accountEvents.reduce((sum, event) => sum + event.exposure, 0);
-      const accountLoss = accountEvents.reduce((sum, event) => sum + event.loss, 0);
-      
-      totalPortfolioValue += accountValue;
-      totalPortfolioLoss += accountLoss;
-    });
-
-    // Calculate portfolio variance (simplified)
-    const averageLoss = totalPortfolioLoss / events.length;
-    portfolioVariance = events.reduce((sum, event) => {
-      const eventLoss = this.convertCurrency(event.financialImpact.totalLoss, event.financialImpact.currency, currency);
-      return sum + Math.pow(eventLoss - averageLoss, 2);
-    }, 0) / events.length;
-
-    const portfolioRisk = Math.sqrt(portfolioVariance);
-
-    return {
-      portfolioValue: totalPortfolioValue,
-      portfolioRisk,
-      currency,
-      calculationMethod: 'Portfolio Risk Assessment',
-      accountCount,
-      totalPortfolioLoss,
-      portfolioVariance,
-      riskPerAccount: accountCount > 0 ? portfolioRisk / accountCount : 0
-    };
+  calculateLossExceedanceCurve(lossData) {
+    const sortedLosses = [...lossData].sort((a, b) => b - a);
+    const totalEvents = sortedLosses.length;
+    
+    return sortedLosses.map((loss, index) => ({
+      loss,
+      exceedanceProbability: (index + 1) / totalEvents,
+      returnPeriod: totalEvents / (index + 1)
+    }));
   }
 
   /**
-   * Calculate Scenario Analysis
-   * @param {Array} events - Array of simulation events
-   * @param {string} currency - Target currency
-   * @returns {Object} Scenario analysis
+   * Calculate probability of exceedance for a specific threshold
+   * @param {Array<number>} lossData - Array of loss values
+   * @param {number} threshold - Loss threshold
+   * @returns {number} Probability of exceedance
    */
-  calculateScenarioAnalysis(events, currency = 'USD') {
-    if (!events || events.length === 0) {
-      return {
-        scenarios: {},
-        currency,
-        calculationMethod: 'Scenario Analysis'
-      };
-    }
+  calculateProbabilityOfExceedance(lossData, threshold) {
+    const exceedingEvents = lossData.filter(loss => loss > threshold);
+    return exceedingEvents.length / lossData.length;
+  }
 
-    // Group events by severity
-    const severityGroups = {};
-    events.forEach(event => {
-      if (!severityGroups[event.severity]) {
-        severityGroups[event.severity] = [];
+  /**
+   * Calculate Sharpe ratio for risk-adjusted returns
+   * @param {number} expectedReturn - Expected return
+   * @param {number} volatility - Standard deviation
+   * @param {number} riskFreeRate - Risk-free rate (default 0.02 = 2%)
+   * @returns {number} Sharpe ratio
+   */
+  calculateSharpeRatio(expectedReturn, volatility, riskFreeRate = 0.02) {
+    if (volatility === 0) return 0;
+    return (expectedReturn - riskFreeRate) / volatility;
+  }
+
+  /**
+   * Calculate Return on Risk-Adjusted Capital (RORAC)
+   * @param {number} expectedReturn - Expected return
+   * @param {number} riskCapital - Risk capital (typically VaR)
+   * @returns {number} RORAC ratio
+   */
+  calculateRORACratio(expectedReturn, riskCapital) {
+    if (riskCapital === 0) return 0;
+    return expectedReturn / riskCapital;
+  }
+
+  /**
+   * Calculate diversification benefit
+   * @param {Array<Object>} portfolioItems - Array of portfolio items with exposure amounts
+   * @returns {number} Diversification benefit (0-1 scale)
+   */
+  calculateDiversificationBenefit(portfolioItems) {
+    if (!portfolioItems || portfolioItems.length <= 1) return 0;
+    
+    const totalExposure = portfolioItems.reduce((sum, item) => sum + item.exposureAmount, 0);
+    if (totalExposure === 0) return 0;
+    
+    // Calculate Herfindahl-Hirschman Index (HHI)
+    const hhi = portfolioItems.reduce((sum, item) => {
+      const share = item.exposureAmount / totalExposure;
+      return sum + (share * share);
+    }, 0);
+    
+    // Convert HHI to diversification benefit (1 - HHI)
+    return Math.max(0, 1 - hhi);
+  }
+
+  /**
+   * Calculate concentration risk
+   * @param {Array<Object>} portfolioItems - Array of portfolio items
+   * @param {string} concentrationBy - Concentration dimension ('geography', 'peril', 'account')
+   * @returns {number} Concentration risk score (0-1 scale)
+   */
+  calculateConcentrationRisk(portfolioItems, concentrationBy = 'geography') {
+    if (!portfolioItems || portfolioItems.length === 0) return 0;
+    
+    const totalExposure = portfolioItems.reduce((sum, item) => sum + item.exposureAmount, 0);
+    const concentrationMap = {};
+    
+    portfolioItems.forEach(item => {
+      let key;
+      switch (concentrationBy) {
+        case 'geography':
+          key = `${Math.floor(item.latitude / 5)}_${Math.floor(item.longitude / 5)}`; // 5-degree grid
+          break;
+        case 'peril':
+          key = item.hazardType || 'Unknown';
+          break;
+        case 'account':
+          key = item.accountId || 'Unknown';
+          break;
+        default:
+          key = 'default';
       }
-      severityGroups[event.severity].push(event);
+      
+      concentrationMap[key] = (concentrationMap[key] || 0) + item.exposureAmount;
     });
+    
+    // Calculate concentration using HHI
+    const hhi = Object.values(concentrationMap).reduce((sum, exposure) => {
+      const share = exposure / totalExposure;
+      return sum + (share * share);
+    }, 0);
+    
+    return hhi; // Higher HHI = Higher concentration risk
+  }
 
-    const scenarios = {};
-    Object.keys(severityGroups).forEach(severity => {
-      const severityEvents = severityGroups[severity];
-      const totalLoss = severityEvents.reduce((sum, event) => 
-        sum + this.convertCurrency(event.financialImpact.totalLoss, event.financialImpact.currency, currency), 0
-      );
-      const averageLoss = totalLoss / severityEvents.length;
-      const maxLoss = Math.max(...severityEvents.map(event => 
-        this.convertCurrency(event.financialImpact.totalLoss, event.financialImpact.currency, currency)
-      ));
+  /**
+   * Calculate risk-adjusted exposure
+   * @param {number} grossExposure - Gross exposure amount
+   * @param {number} riskScore - Risk score (0-10 scale)
+   * @param {Object} adjustmentFactors - Risk adjustment factors
+   * @returns {number} Risk-adjusted exposure
+   */
+  calculateRiskAdjustedExposure(grossExposure, riskScore, adjustmentFactors = {}) {
+    const {
+      baseAdjustment = 0.1, // 10% base risk adjustment
+      riskScaling = 0.05,    // 5% per risk score unit
+      maxAdjustment = 0.5    // 50% maximum adjustment
+    } = adjustmentFactors;
+    
+    const riskAdjustment = baseAdjustment + (riskScore * riskScaling);
+    const cappedAdjustment = Math.min(riskAdjustment, maxAdjustment);
+    
+    return grossExposure * (1 + cappedAdjustment);
+  }
 
-      scenarios[severity] = {
-        eventCount: severityEvents.length,
-        totalLoss,
-        averageLoss,
-        maxLoss,
-        probability: severityEvents.length / events.length
-      };
-    });
-
+  /**
+   * Calculate correlation matrix for multiple perils
+   * @param {Array<Array<number>>} perilLossData - Array of loss arrays for each peril
+   * @param {Array<string>} perilNames - Names of perils
+   * @returns {Object} Correlation matrix and related statistics
+   */
+  calculatePerilCorrelation(perilLossData, perilNames) {
+    const numPerils = perilLossData.length;
+    const correlationMatrix = Array(numPerils).fill().map(() => Array(numPerils).fill(0));
+    
+    // Calculate correlation coefficients
+    for (let i = 0; i < numPerils; i++) {
+      for (let j = 0; j < numPerils; j++) {
+        if (i === j) {
+          correlationMatrix[i][j] = 1.0;
+        } else {
+          correlationMatrix[i][j] = this.calculatePearsonCorrelation(
+            perilLossData[i], 
+            perilLossData[j]
+          );
+        }
+      }
+    }
+    
     return {
-      scenarios,
-      currency,
-      calculationMethod: 'Scenario Analysis',
-      totalScenarios: Object.keys(scenarios).length
+      correlationMatrix,
+      perilNames,
+      averageCorrelation: this.calculateAverageCorrelation(correlationMatrix),
+      maxCorrelation: this.getMaxOffDiagonalCorrelation(correlationMatrix),
+      diversificationEffect: this.calculateDiversificationEffect(correlationMatrix)
     };
   }
 
   /**
-   * Convert currency
+   * Calculate optimal retention levels for reinsurance
+   * @param {Array<number>} lossData - Historical or simulated loss data
+   * @param {Object} retentionOptions - Retention calculation options
+   * @returns {Object} Optimal retention analysis
+   */
+  calculateOptimalRetention(lossData, retentionOptions = {}) {
+    const {
+      riskTolerance = 0.05, // 5% of capital
+      capitalBase = 1000000000, // $1B capital
+      reinsuranceCost = 0.15, // 15% of premium
+      targetROE = 0.12 // 12% return on equity
+    } = retentionOptions;
+    
+    const maxRetention = capitalBase * riskTolerance;
+    const testRetentionLevels = [];
+    const step = maxRetention / 20; // Test 20 different levels
+    
+    for (let retention = step; retention <= maxRetention; retention += step) {
+      const metrics = this.calculateRetentionMetrics(lossData, retention, retentionOptions);
+      testRetentionLevels.push({
+        retentionLevel: retention,
+        ...metrics
+      });
+    }
+    
+    // Find optimal retention level based on risk-adjusted returns
+    const optimalLevel = testRetentionLevels.reduce((best, current) => 
+      current.riskAdjustedReturn > best.riskAdjustedReturn ? current : best
+    );
+    
+    return {
+      optimalRetentionLevel: optimalLevel.retentionLevel,
+      optimalMetrics: optimalLevel,
+      analysisResults: testRetentionLevels,
+      recommendation: this.generateRetentionRecommendation(optimalLevel, retentionOptions)
+    };
+  }
+
+  /**
+   * Calculate financial metrics for a specific retention level
+   * @param {Array<number>} lossData - Loss data
+   * @param {number} retentionLevel - Retention level to test
+   * @param {Object} options - Calculation options
+   * @returns {Object} Financial metrics for this retention level
+   */
+  calculateRetentionMetrics(lossData, retentionLevel, options) {
+    const retainedLosses = lossData.map(loss => Math.min(loss, retentionLevel));
+    const cededLosses = lossData.map(loss => Math.max(0, loss - retentionLevel));
+    
+    const retainedEL = this.calculateExpectedLoss(retainedLosses);
+    const cededEL = this.calculateExpectedLoss(cededLosses);
+    const reinsuranceCost = cededEL * options.reinsuranceCost;
+    
+    const netCost = retainedEL + reinsuranceCost;
+    const riskReduction = (cededEL / (retainedEL + cededEL)) || 0;
+    const riskAdjustedReturn = (options.targetROE * options.capitalBase - netCost) / options.capitalBase;
+    
+    return {
+      retainedEL,
+      cededEL,
+      reinsuranceCost,
+      netCost,
+      riskReduction,
+      riskAdjustedReturn,
+      var95: this.calculateValueAtRisk(retainedLosses, 0.95),
+      tvar95: this.calculateTailValueAtRisk(retainedLosses, 0.95)
+    };
+  }
+
+  /**
+   * Generate reinsurance retention recommendation
+   * @param {Object} optimalMetrics - Optimal retention metrics
+   * @param {Object} options - Original options
+   * @returns {Object} Recommendation with rationale
+   */
+  generateRetentionRecommendation(optimalMetrics, options) {
+    const retentionAsPercent = (optimalMetrics.retentionLevel / options.capitalBase * 100).toFixed(1);
+    const riskReductionPercent = (optimalMetrics.riskReduction * 100).toFixed(1);
+    
+    return {
+      recommendation: `Retain ${this.formatCurrency(optimalMetrics.retentionLevel)} (${retentionAsPercent}% of capital)`,
+      rationale: [
+        `Achieves ${riskReductionPercent}% risk transfer to reinsurers`,
+        `Net cost of ${this.formatCurrency(optimalMetrics.netCost)} including reinsurance`,
+        `Risk-adjusted return of ${(optimalMetrics.riskAdjustedReturn * 100).toFixed(2)}%`,
+        `95% VaR reduced to ${this.formatCurrency(optimalMetrics.var95)}`
+      ],
+      riskProfile: {
+        retentionLevel: optimalMetrics.retentionLevel,
+        var95: optimalMetrics.var95,
+        expectedLoss: optimalMetrics.retainedEL,
+        riskCapital: optimalMetrics.var95 * 1.2 // 120% of VaR as risk capital
+      }
+    };
+  }
+
+  /**
+   * Calculate loss distribution statistics
+   * @param {Array<number>} lossData - Array of loss values
+   * @returns {Object} Distribution statistics
+   */
+  calculateDistributionStatistics(lossData) {
+    if (!lossData || lossData.length === 0) {
+      return { error: 'No loss data provided' };
+    }
+
+    const mean = this.calculateExpectedLoss(lossData);
+    const median = this.calculateMedian(lossData);
+    const mode = this.calculateMode(lossData);
+    const variance = this.calculateVariance(lossData);
+    const standardDeviation = Math.sqrt(variance);
+    const skewness = this.calculateSkewness(lossData);
+    const kurtosis = this.calculateKurtosis(lossData);
+    
+    // Calculate percentiles
+    const percentiles = {};
+    [1, 5, 10, 25, 50, 75, 90, 95, 99].forEach(p => {
+      percentiles[`P${p}`] = this.calculatePercentile(lossData, p / 100);
+    });
+
+    return {
+      centralTendency: { mean, median, mode },
+      dispersion: { variance, standardDeviation, range: Math.max(...lossData) - Math.min(...lossData) },
+      shape: { skewness, kurtosis },
+      percentiles,
+      summary: {
+        totalObservations: lossData.length,
+        minValue: Math.min(...lossData),
+        maxValue: Math.max(...lossData),
+        coefficientOfVariation: standardDeviation / mean
+      }
+    };
+  }
+
+  // Statistical helper methods
+
+  calculateMedian(values) {
+    const sorted = [...values].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 === 0 
+      ? (sorted[mid - 1] + sorted[mid]) / 2 
+      : sorted[mid];
+  }
+
+  calculateMode(values) {
+    const frequency = {};
+    values.forEach(value => {
+      const bucket = Math.floor(value / 1000) * 1000; // Group into $1k buckets
+      frequency[bucket] = (frequency[bucket] || 0) + 1;
+    });
+    
+    let maxFreq = 0;
+    let mode = 0;
+    Object.entries(frequency).forEach(([value, freq]) => {
+      if (freq > maxFreq) {
+        maxFreq = freq;
+        mode = parseInt(value);
+      }
+    });
+    
+    return mode;
+  }
+
+  calculateVariance(values) {
+    const mean = this.calculateExpectedLoss(values);
+    return values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / values.length;
+  }
+
+  calculateStandardDeviation(values) {
+    return Math.sqrt(this.calculateVariance(values));
+  }
+
+  calculateSkewness(values) {
+    const mean = this.calculateExpectedLoss(values);
+    const stdDev = this.calculateStandardDeviation(values);
+    if (stdDev === 0) return 0;
+    
+    const skewSum = values.reduce((sum, value) => {
+      return sum + Math.pow((value - mean) / stdDev, 3);
+    }, 0);
+    
+    return skewSum / values.length;
+  }
+
+  calculateKurtosis(values) {
+    const mean = this.calculateExpectedLoss(values);
+    const stdDev = this.calculateStandardDeviation(values);
+    if (stdDev === 0) return 0;
+    
+    const kurtSum = values.reduce((sum, value) => {
+      return sum + Math.pow((value - mean) / stdDev, 4);
+    }, 0);
+    
+    return (kurtSum / values.length) - 3; // Excess kurtosis
+  }
+
+  calculatePercentile(values, percentile) {
+    const sorted = [...values].sort((a, b) => a - b);
+    const index = percentile * (sorted.length - 1);
+    const lower = Math.floor(index);
+    const upper = Math.ceil(index);
+    
+    if (lower === upper) {
+      return sorted[lower];
+    }
+    
+    const weight = index - lower;
+    return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+  }
+
+  calculatePearsonCorrelation(x, y) {
+    if (x.length !== y.length || x.length === 0) return 0;
+    
+    const n = x.length;
+    const meanX = x.reduce((sum, val) => sum + val, 0) / n;
+    const meanY = y.reduce((sum, val) => sum + val, 0) / n;
+    
+    let numerator = 0;
+    let denomX = 0;
+    let denomY = 0;
+    
+    for (let i = 0; i < n; i++) {
+      const diffX = x[i] - meanX;
+      const diffY = y[i] - meanY;
+      numerator += diffX * diffY;
+      denomX += diffX * diffX;
+      denomY += diffY * diffY;
+    }
+    
+    const denominator = Math.sqrt(denomX * denomY);
+    return denominator === 0 ? 0 : numerator / denominator;
+  }
+
+  calculateAverageCorrelation(correlationMatrix) {
+    let sum = 0;
+    let count = 0;
+    
+    for (let i = 0; i < correlationMatrix.length; i++) {
+      for (let j = i + 1; j < correlationMatrix[i].length; j++) {
+        sum += correlationMatrix[i][j];
+        count++;
+      }
+    }
+    
+    return count > 0 ? sum / count : 0;
+  }
+
+  getMaxOffDiagonalCorrelation(correlationMatrix) {
+    let max = -1;
+    
+    for (let i = 0; i < correlationMatrix.length; i++) {
+      for (let j = i + 1; j < correlationMatrix[i].length; j++) {
+        max = Math.max(max, Math.abs(correlationMatrix[i][j]));
+      }
+    }
+    
+    return max;
+  }
+
+  calculateDiversificationEffect(correlationMatrix) {
+    const avgCorrelation = this.calculateAverageCorrelation(correlationMatrix);
+    // Diversification effect is inverse of correlation
+    return Math.max(0, 1 - avgCorrelation);
+  }
+
+  // Utility methods
+
+  formatCurrency(amount, currency = 'USD') {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  }
+
+  createEmptyRiskMetrics(currency, timeHorizon) {
+    return {
+      summary: {
+        totalEvents: 0,
+        expectedLoss: 0,
+        standardDeviation: 0,
+        coefficientOfVariation: 0,
+        median: 0,
+        maxLoss: 0,
+        minLoss: 0,
+        currency,
+        timeHorizon
+      },
+      distributionMetrics: { skewness: 0, kurtosis: 0, variance: 0 },
+      valueAtRisk: {},
+      tailValueAtRisk: {},
+      riskAdjustedMetrics: { sharpeRatio: 0, probabilityOfExceedance: 0, returnOnRiskAdjustedCapital: 0 },
+      lossExceedanceCurve: [],
+      calculatedAt: new Date().toISOString(),
+      methodology: 'No data available'
+    };
+  }
+
+  /**
+   * Convert losses to different currencies
    * @param {number} amount - Amount to convert
    * @param {string} fromCurrency - Source currency
    * @param {string} toCurrency - Target currency
+   * @param {Object} exchangeRates - Exchange rate object
    * @returns {number} Converted amount
    */
-  convertCurrency(amount, fromCurrency, toCurrency) {
+  convertCurrency(amount, fromCurrency, toCurrency, exchangeRates = {}) {
     if (fromCurrency === toCurrency) return amount;
     
-    const fromRate = this.currencyRates.get(fromCurrency) || 1;
-    const toRate = this.currencyRates.get(toCurrency) || 1;
+    // Default exchange rates (in production, would use live rates)
+    const defaultRates = {
+      'USD': 1.0,
+      'EUR': 0.85,
+      'GBP': 0.73,
+      'JPY': 110.0,
+      'CAD': 1.25,
+      'AUD': 1.35
+    };
+    
+    const rates = { ...defaultRates, ...exchangeRates };
+    const fromRate = rates[fromCurrency] || 1;
+    const toRate = rates[toCurrency] || 1;
     
     // Convert to USD first, then to target currency
     const usdAmount = amount / fromRate;
@@ -519,57 +640,65 @@ class FinancialCalculationService {
   }
 
   /**
-   * Calculate confidence interval
-   * @param {Array} values - Array of values
-   * @param {number} confidenceLevel - Confidence level (0-1)
-   * @returns {Object} Confidence interval
+   * Calculate insurance pricing metrics
+   * @param {Object} riskMetrics - Risk metrics from portfolio analysis
+   * @param {Object} pricingOptions - Pricing model options
+   * @returns {Object} Pricing recommendations
    */
-  calculateConfidenceInterval(values, confidenceLevel = 0.95) {
-    if (!values || values.length === 0) {
-      return { lower: 0, upper: 0, confidenceLevel };
-    }
-
-    const sortedValues = [...values].sort((a, b) => a - b);
-    const n = sortedValues.length;
-    const alpha = 1 - confidenceLevel;
-    const lowerIndex = Math.floor(alpha / 2 * n);
-    const upperIndex = Math.ceil((1 - alpha / 2) * n) - 1;
-
+  calculateInsurancePricing(riskMetrics, pricingOptions = {}) {
+    const {
+      targetProfitMargin = 0.20, // 20% profit margin
+      expenseRatio = 0.35, // 35% expense ratio
+      costOfCapital = 0.08, // 8% cost of capital
+      riskMargin = 0.15 // 15% risk margin
+    } = pricingOptions;
+    
+    const expectedLoss = riskMetrics.summary.expectedLoss;
+    const riskCapital = riskMetrics.valueAtRisk['VaR_99.5%'] || expectedLoss * 10;
+    
+    // Technical price calculation
+    const lossComponent = expectedLoss * (1 + riskMargin);
+    const expenseComponent = lossComponent * expenseRatio;
+    const capitalComponent = riskCapital * costOfCapital;
+    const profitComponent = (lossComponent + expenseComponent + capitalComponent) * targetProfitMargin;
+    
+    const technicalPrice = lossComponent + expenseComponent + capitalComponent + profitComponent;
+    const lossRatio = expectedLoss / technicalPrice;
+    const combinedRatio = lossRatio + expenseRatio;
+    
     return {
-      lower: sortedValues[Math.max(0, lowerIndex)],
-      upper: sortedValues[Math.min(n - 1, upperIndex)],
-      confidenceLevel
+      pricing: {
+        technicalPrice,
+        lossComponent,
+        expenseComponent,
+        capitalComponent,
+        profitComponent,
+        currency: riskMetrics.summary.currency
+      },
+      metrics: {
+        lossRatio,
+        expenseRatio,
+        combinedRatio,
+        profitMargin: profitComponent / technicalPrice,
+        returnOnCapital: profitComponent / riskCapital
+      },
+      recommendation: {
+        minimumPrice: technicalPrice * 0.9, // 10% discount maximum
+        targetPrice: technicalPrice,
+        maximumPrice: technicalPrice * 1.3, // 30% premium maximum
+        competitivePosition: this.assessCompetitivePosition(technicalPrice, options.marketRates || {})
+      }
     };
   }
 
-  /**
-   * Get risk level based on concentration risk
-   * @param {number} concentrationRisk - Concentration risk value
-   * @returns {string} Risk level
-   */
-  getRiskLevel(concentrationRisk) {
-    if (concentrationRisk < 0.15) return 'Low';
-    if (concentrationRisk < 0.25) return 'Medium';
-    if (concentrationRisk < 0.35) return 'High';
-    return 'Very High';
-  }
-
-  /**
-   * Update currency rates
-   * @param {Object} rates - Currency rates object
-   */
-  updateCurrencyRates(rates) {
-    Object.entries(rates).forEach(([currency, rate]) => {
-      this.currencyRates.set(currency, rate);
-    });
-  }
-
-  /**
-   * Get current currency rates
-   * @returns {Object} Current currency rates
-   */
-  getCurrencyRates() {
-    return Object.fromEntries(this.currencyRates);
+  assessCompetitivePosition(technicalPrice, marketRates) {
+    const avgMarketPrice = Object.values(marketRates).reduce((sum, price) => sum + price, 0) / Object.keys(marketRates).length || technicalPrice;
+    const priceRatio = technicalPrice / avgMarketPrice;
+    
+    if (priceRatio < 0.9) return 'Highly Competitive';
+    if (priceRatio < 1.1) return 'Competitive';
+    if (priceRatio < 1.3) return 'Above Market';
+    return 'Significantly Above Market';
   }
 }
 

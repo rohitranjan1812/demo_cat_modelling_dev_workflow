@@ -15,6 +15,7 @@ const hazardRoutes = require('./routes/hazards');
 const vulnerabilityRoutes = require('./routes/vulnerabilities');
 const integrationRoutes = require('./routes/integration');
 const simulationRoutes = require('./routes/simulations');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 
@@ -77,6 +78,7 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/accounts', accountRoutes);
 app.use('/api/v1', hazardRoutes);
 app.use('/api/v1', vulnerabilityRoutes);

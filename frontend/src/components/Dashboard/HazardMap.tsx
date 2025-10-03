@@ -19,7 +19,6 @@ import {
 } from '@mui/icons-material';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { motion } from 'framer-motion';
 import { useQuery } from 'react-query';
 
 import apiService from '../../services/api';
@@ -225,58 +224,87 @@ const HazardMap: React.FC = () => {
             />
 
             {/* Render hazards */}
-            {mapType === 'hazards' && hazardsData?.data?.map((hazard: any) => {
+            {mapType === 'hazards' && Array.isArray(hazardsData?.data) && hazardsData.data.map((hazard: any) => {
               if (!selectedHazardTypes.includes(hazard.hazardType)) return null;
               
-              // For demo purposes, generate random coordinates within US bounds
-              const lat = 25 + Math.random() * 25; // 25 to 50
-              const lng = -125 + Math.random() * 50; // -125 to -75
+              // Use actual coordinates from backend
+              if (!hazard.footprint || typeof hazard.footprint.centerLatitude !== 'number' || typeof hazard.footprint.centerLongitude !== 'number') {
+                return null; // Skip hazards without valid coordinates
+              }
+              
+              const lat = hazard.footprint.centerLatitude;
+              const lng = hazard.footprint.centerLongitude;
+              const radius = hazard.footprint.radius ? hazard.footprint.radius * 1000 : 50000; // Convert km to meters, default 50km
               
               return (
-                <Marker
-                  key={hazard._id}
-                  position={[lat, lng]}
-                  icon={getHazardIcon(hazard.hazardType)}
-                >
-                  <Popup>
-                    <Box sx={{ p: 1 }}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
-                        {hazard.hazardName}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        Type: {hazard.hazardType}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        Severity: {hazard.severity}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        Probability: {(hazard.probability * 100).toFixed(1)}%
-                      </Typography>
-                      <Chip
-                        label={hazard.severity}
-                        size="small"
-                        sx={{
-                          backgroundColor: getHazardColor(hazard.hazardType),
-                          color: 'white',
-                        }}
-                      />
-                    </Box>
-                  </Popup>
-                </Marker>
+                <React.Fragment key={hazard._id}>
+                  <Marker
+                    position={[lat, lng]}
+                    icon={getHazardIcon(hazard.hazardType)}
+                  >
+                    <Popup>
+                      <Box sx={{ p: 1 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                          {hazard.hazardName}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          Type: {hazard.hazardType}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          Severity: {hazard.severity}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          Probability: {(hazard.probability * 100).toFixed(1)}%
+                        </Typography>
+                        {hazard.footprint.radius && (
+                          <Typography variant="body2" sx={{ mb: 1 }}>
+                            Affected Radius: {hazard.footprint.radius} {hazard.footprint.unit}
+                          </Typography>
+                        )}
+                        <Chip
+                          label={hazard.severity}
+                          size="small"
+                          sx={{
+                            backgroundColor: getHazardColor(hazard.hazardType),
+                            color: 'white',
+                          }}
+                        />
+                      </Box>
+                    </Popup>
+                  </Marker>
+                  {/* Show affected area circle */}
+                  <Circle
+                    center={[lat, lng]}
+                    radius={radius}
+                    pathOptions={{
+                      color: getHazardColor(hazard.hazardType),
+                      fillColor: getHazardColor(hazard.hazardType),
+                      fillOpacity: 0.1,
+                      weight: 1,
+                    }}
+                  />
+                </React.Fragment>
               );
             })}
 
             {/* Render vulnerabilities */}
-            {mapType === 'vulnerabilities' && vulnerabilitiesData?.data?.map((vulnerability: any) => {
-              // For demo purposes, generate random coordinates
-              const lat = 25 + Math.random() * 25;
-              const lng = -125 + Math.random() * 50;
+            {mapType === 'vulnerabilities' && Array.isArray(vulnerabilitiesData?.data) && vulnerabilitiesData.data.map((vulnerability: any) => {
+              // Use actual coordinates from backend
+              if (!vulnerability.geographicScope || 
+                  typeof vulnerability.geographicScope.centerLatitude !== 'number' || 
+                  typeof vulnerability.geographicScope.centerLongitude !== 'number') {
+                return null; // Skip vulnerabilities without valid coordinates
+              }
+              
+              const lat = vulnerability.geographicScope.centerLatitude;
+              const lng = vulnerability.geographicScope.centerLongitude;
+              const radius = vulnerability.geographicScope.radius ? vulnerability.geographicScope.radius * 1000 : 50000; // Convert km to meters, default 50km
               
               return (
                 <Circle
                   key={vulnerability._id}
                   center={[lat, lng]}
-                  radius={50000} // 50km radius
+                  radius={radius}
                   pathOptions={{
                     color: getVulnerabilityColor(vulnerability.overallRiskLevel),
                     fillColor: getVulnerabilityColor(vulnerability.overallRiskLevel),
@@ -293,11 +321,19 @@ const HazardMap: React.FC = () => {
                         Type: {vulnerability.vulnerabilityType}
                       </Typography>
                       <Typography variant="body2" sx={{ mb: 1 }}>
+                        Category: {vulnerability.vulnerabilityCategory}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
                         Risk Level: {vulnerability.overallRiskLevel}
                       </Typography>
                       <Typography variant="body2" sx={{ mb: 1 }}>
-                        Score: {vulnerability.overallVulnerabilityScore}/100
+                        Score: {vulnerability.overallVulnerabilityScore.toFixed(1)}/10
                       </Typography>
+                      {vulnerability.geographicScope.radius && (
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          Affected Radius: {vulnerability.geographicScope.radius} {vulnerability.geographicScope.radiusUnit}
+                        </Typography>
+                      )}
                       <Chip
                         label={vulnerability.overallRiskLevel}
                         size="small"

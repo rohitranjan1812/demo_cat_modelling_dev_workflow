@@ -217,7 +217,7 @@ const HazardDetails: React.FC<HazardDetailsProps> = ({ hazard, open, onClose, on
                     Description
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    {hazard.description}
+                    {hazard.description || 'No description available'}
                   </Typography>
                 </CardContent>
               </Card>
@@ -315,7 +315,9 @@ const HazardDetails: React.FC<HazardDetailsProps> = ({ hazard, open, onClose, on
                     <Grid item xs={12} sm={4}>
                       <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(25, 118, 210, 0.04)', borderRadius: 2 }}>
                         <Typography variant="h4" sx={{ fontWeight: 700, color: '#f44336', mb: 1 }}>
-                          {formatCurrency(hazard.impactMetrics.potentialLoss, hazard.impactMetrics.currency)}
+                          {hazard.economicImpact && hazard.economicImpact.length > 0 
+                            ? formatCurrency(hazard.economicImpact[0].estimatedLoss || 0, hazard.economicImpact[0].currency || 'USD')
+                            : 'N/A'}
                         </Typography>
                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                           Potential Loss
@@ -326,10 +328,10 @@ const HazardDetails: React.FC<HazardDetailsProps> = ({ hazard, open, onClose, on
                     <Grid item xs={12} sm={4}>
                       <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(25, 118, 210, 0.04)', borderRadius: 2 }}>
                         <Typography variant="h4" sx={{ fontWeight: 700, color: '#ff9800', mb: 1 }}>
-                          {hazard.impactMetrics.affectedPopulation.toLocaleString()}
+                          {hazard.footprint.affectedArea?.toLocaleString() || 'N/A'}
                         </Typography>
                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                          Affected Population
+                          Affected Area (km²)
                         </Typography>
                       </Box>
                     </Grid>
@@ -337,7 +339,9 @@ const HazardDetails: React.FC<HazardDetailsProps> = ({ hazard, open, onClose, on
                     <Grid item xs={12} sm={4}>
                       <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(25, 118, 210, 0.04)', borderRadius: 2 }}>
                         <Typography variant="h4" sx={{ fontWeight: 700, color: '#4caf50', mb: 1 }}>
-                          {formatCurrency(hazard.impactMetrics.economicImpact, hazard.impactMetrics.currency)}
+                          {hazard.economicImpact && hazard.economicImpact.length > 0 
+                            ? formatCurrency(hazard.economicImpact[0].estimatedLoss || 0, hazard.economicImpact[0].currency || 'USD')
+                            : 'N/A'}
                         </Typography>
                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                           Economic Impact
@@ -376,7 +380,7 @@ const HazardDetails: React.FC<HazardDetailsProps> = ({ hazard, open, onClose, on
                         <ListItem>
                           <ListItemText
                             primary="Source"
-                            secondary={hazard.metadata.source}
+                            secondary={hazard.metadata?.source || 'N/A'}
                           />
                         </ListItem>
                       </List>
@@ -387,7 +391,7 @@ const HazardDetails: React.FC<HazardDetailsProps> = ({ hazard, open, onClose, on
                         <ListItem>
                           <ListItemText
                             primary="Version"
-                            secondary={hazard.metadata.version}
+                            secondary={hazard.metadata?.version || 'N/A'}
                           />
                         </ListItem>
                         <ListItem>
@@ -406,14 +410,14 @@ const HazardDetails: React.FC<HazardDetailsProps> = ({ hazard, open, onClose, on
                     </Grid>
                   </Grid>
                   
-                  {hazard.metadata.tags.length > 0 && (
+                  {hazard.metadata?.tags && hazard.metadata.tags.length > 0 && (
                     <>
                       <Divider sx={{ my: 2 }} />
                       <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                         Tags
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {hazard.metadata.tags.map((tag) => (
+                        {hazard.metadata?.tags?.map((tag: string) => (
                           <Chip
                             key={tag}
                             label={tag}

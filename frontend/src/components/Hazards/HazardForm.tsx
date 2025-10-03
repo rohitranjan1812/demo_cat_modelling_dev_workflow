@@ -45,7 +45,7 @@ const hazardTypes: HazardType[] = [
 ];
 
 const hazardCategories: HazardCategory[] = [
-  'Natural', 'Technological', 'Biological', 'Climate', 'Geological', 'Meteorological', 'Hydrological'
+  'Natural', 'Man-made', 'Emerging', 'Compound', 'Cascading'
 ];
 
 const severityLevels: SeverityLevel[] = [
@@ -66,19 +66,34 @@ const schema = yup.object({
   hazardName: yup.string().required('Hazard name is required'),
   hazardType: yup.string().required('Hazard type is required'),
   hazardCategory: yup.string().required('Hazard category is required'),
-  description: yup.string().required('Description is required'),
+  hazardDescription: yup.string().required('Description is required'),
   severity: yup.string().required('Severity is required'),
   probability: yup.number().min(0).max(1).required('Probability is required'),
   affectedRegions: yup.array().min(1, 'At least one region is required'),
   affectedCountries: yup.array().min(1, 'At least one country is required'),
-  impactMetrics: yup.object({
-    potentialLoss: yup.number().min(0).required('Potential loss is required'),
-    affectedPopulation: yup.number().min(0).required('Affected population is required'),
-    economicImpact: yup.number().min(0).required('Economic impact is required'),
-    currency: yup.string().required('Currency is required'),
-  }),
+  economicImpact: yup.array().of(
+    yup.object({
+      estimatedLoss: yup.number().min(0),
+      currency: yup.string(),
+    })
+  ),
   isHistorical: yup.boolean(),
   isSimulated: yup.boolean(),
+  // Geographic footprint fields
+  footprint: yup.object({
+    centerLatitude: yup.number().min(-90).max(90).required('Latitude is required'),
+    centerLongitude: yup.number().min(-180).max(180).required('Longitude is required'),
+    radius: yup.number().min(0).required('Radius is required'),
+    unit: yup.string().required('Unit is required'),
+    affectedArea: yup.number().min(0),
+  }),
+  // Temporal fields
+  temporal: yup.object({
+    startTime: yup.date().required('Start time is required'),
+    endTime: yup.date().optional(),
+    duration: yup.number().min(0).optional(),
+    durationUnit: yup.string().optional(),
+  }),
 });
 
 const HazardForm: React.FC<HazardFormProps> = ({ hazard, open, onClose, onSave }) => {
@@ -90,19 +105,27 @@ const HazardForm: React.FC<HazardFormProps> = ({ hazard, open, onClose, onSave }
       hazardName: hazard?.hazardName || '',
       hazardType: hazard?.hazardType || '',
       hazardCategory: hazard?.hazardCategory || '',
-      description: hazard?.description || '',
+      hazardDescription: hazard?.hazardDescription || '',
       severity: hazard?.severity || '',
       probability: hazard?.probability || 0,
       affectedRegions: hazard?.affectedRegions || [],
       affectedCountries: hazard?.affectedCountries || [],
-      impactMetrics: {
-        potentialLoss: hazard?.impactMetrics?.potentialLoss || 0,
-        affectedPopulation: hazard?.impactMetrics?.affectedPopulation || 0,
-        economicImpact: hazard?.impactMetrics?.economicImpact || 0,
-        currency: hazard?.impactMetrics?.currency || 'USD',
-      },
+      economicImpact: hazard?.economicImpact || [{ estimatedLoss: 0, currency: 'USD' }],
       isHistorical: hazard?.isHistorical || false,
       isSimulated: hazard?.isSimulated || false,
+      footprint: {
+        centerLatitude: hazard?.footprint?.centerLatitude || 0,
+        centerLongitude: hazard?.footprint?.centerLongitude || 0,
+        radius: hazard?.footprint?.radius || 10,
+        unit: hazard?.footprint?.unit || 'km',
+        affectedArea: hazard?.footprint?.affectedArea || 0,
+      },
+      temporal: {
+        startTime: hazard?.temporal?.startTime ? new Date(hazard.temporal.startTime) : new Date(),
+        endTime: hazard?.temporal?.endTime ? new Date(hazard.temporal.endTime) : undefined,
+        duration: hazard?.temporal?.duration || 0,
+        durationUnit: hazard?.temporal?.durationUnit || 'hours',
+      },
     },
   });
 
@@ -227,7 +250,7 @@ const HazardForm: React.FC<HazardFormProps> = ({ hazard, open, onClose, onSave }
 
               <Grid item xs={12}>
                 <Controller
-                  name="description"
+                  name="hazardDescription"
                   control={control}
                   render={({ field }) => (
                     <TextField
@@ -236,8 +259,8 @@ const HazardForm: React.FC<HazardFormProps> = ({ hazard, open, onClose, onSave }
                       multiline
                       rows={3}
                       label="Description"
-                      error={!!errors.description}
-                      helperText={errors.description?.message}
+                      error={!!errors.hazardDescription}
+                      helperText={errors.hazardDescription?.message}
                     />
                   )}
                 />
@@ -362,6 +385,201 @@ const HazardForm: React.FC<HazardFormProps> = ({ hazard, open, onClose, onSave }
                 />
               </Grid>
 
+              {/* Geographic Footprint */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" sx={{ mb: 2, color: '#1976d2' }}>
+                  Geographic Footprint
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="footprint.centerLatitude"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      type="number"
+                      label="Center Latitude"
+                      inputProps={{ min: -90, max: 90, step: 0.000001 }}
+                      error={!!errors.footprint?.centerLatitude}
+                      helperText={errors.footprint?.centerLatitude?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="footprint.centerLongitude"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      type="number"
+                      label="Center Longitude"
+                      inputProps={{ min: -180, max: 180, step: 0.000001 }}
+                      error={!!errors.footprint?.centerLongitude}
+                      helperText={errors.footprint?.centerLongitude?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="footprint.radius"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      type="number"
+                      label="Radius"
+                      inputProps={{ min: 0, step: 0.1 }}
+                      error={!!errors.footprint?.radius}
+                      helperText={errors.footprint?.radius?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="footprint.unit"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl fullWidth error={!!errors.footprint?.unit}>
+                      <InputLabel>Unit</InputLabel>
+                      <Select
+                        {...field}
+                        label="Unit"
+                      >
+                        <MenuItem value="km">Kilometers</MenuItem>
+                        <MenuItem value="miles">Miles</MenuItem>
+                        <MenuItem value="degrees">Degrees</MenuItem>
+                      </Select>
+                      {errors.footprint?.unit && (
+                        <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                          {errors.footprint.unit.message}
+                        </Typography>
+                      )}
+                    </FormControl>
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="footprint.affectedArea"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      type="number"
+                      label="Affected Area (km²)"
+                      inputProps={{ min: 0, step: 0.1 }}
+                      error={!!errors.footprint?.affectedArea}
+                      helperText={errors.footprint?.affectedArea?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              {/* Temporal Information */}
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" sx={{ mb: 2, color: '#1976d2' }}>
+                  Temporal Information
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="temporal.startTime"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      type="datetime-local"
+                      label="Start Time"
+                      InputLabelProps={{ shrink: true }}
+                      error={!!errors.temporal?.startTime}
+                      helperText={errors.temporal?.startTime?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="temporal.endTime"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      type="datetime-local"
+                      label="End Time (Optional)"
+                      InputLabelProps={{ shrink: true }}
+                      error={!!errors.temporal?.endTime}
+                      helperText={errors.temporal?.endTime?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="temporal.duration"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      type="number"
+                      label="Duration"
+                      inputProps={{ min: 0, step: 0.1 }}
+                      error={!!errors.temporal?.duration}
+                      helperText={errors.temporal?.duration?.message}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Controller
+                  name="temporal.durationUnit"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl fullWidth error={!!errors.temporal?.durationUnit}>
+                      <InputLabel>Duration Unit</InputLabel>
+                      <Select
+                        {...field}
+                        label="Duration Unit"
+                      >
+                        <MenuItem value="seconds">Seconds</MenuItem>
+                        <MenuItem value="minutes">Minutes</MenuItem>
+                        <MenuItem value="hours">Hours</MenuItem>
+                        <MenuItem value="days">Days</MenuItem>
+                        <MenuItem value="weeks">Weeks</MenuItem>
+                        <MenuItem value="months">Months</MenuItem>
+                      </Select>
+                      {errors.temporal?.durationUnit && (
+                        <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
+                          {errors.temporal.durationUnit.message}
+                        </Typography>
+                      )}
+                    </FormControl>
+                  )}
+                />
+              </Grid>
+
               {/* Impact Metrics */}
               <Grid item xs={12}>
                 <Divider sx={{ my: 2 }} />
@@ -372,17 +590,17 @@ const HazardForm: React.FC<HazardFormProps> = ({ hazard, open, onClose, onSave }
 
               <Grid item xs={12} sm={6}>
                 <Controller
-                  name="impactMetrics.potentialLoss"
+                  name="economicImpact.0.estimatedLoss"
                   control={control}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       fullWidth
                       type="number"
-                      label="Potential Loss"
+                      label="Estimated Loss"
                       inputProps={{ min: 0 }}
-                      error={!!errors.impactMetrics?.potentialLoss}
-                      helperText={errors.impactMetrics?.potentialLoss?.message}
+                      error={!!errors.economicImpact?.[0]?.estimatedLoss}
+                      helperText={errors.economicImpact?.[0]?.estimatedLoss?.message}
                     />
                   )}
                 />
@@ -390,10 +608,10 @@ const HazardForm: React.FC<HazardFormProps> = ({ hazard, open, onClose, onSave }
 
               <Grid item xs={12} sm={6}>
                 <Controller
-                  name="impactMetrics.currency"
+                  name="economicImpact.0.currency"
                   control={control}
                   render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.impactMetrics?.currency}>
+                    <FormControl fullWidth error={!!errors.economicImpact?.[0]?.currency}>
                       <InputLabel>Currency</InputLabel>
                       <Select {...field} label="Currency">
                         {currencies.map((currency) => (
@@ -403,42 +621,6 @@ const HazardForm: React.FC<HazardFormProps> = ({ hazard, open, onClose, onSave }
                         ))}
                       </Select>
                     </FormControl>
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="impactMetrics.affectedPopulation"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      type="number"
-                      label="Affected Population"
-                      inputProps={{ min: 0 }}
-                      error={!!errors.impactMetrics?.affectedPopulation}
-                      helperText={errors.impactMetrics?.affectedPopulation?.message}
-                    />
-                  )}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <Controller
-                  name="impactMetrics.economicImpact"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      type="number"
-                      label="Economic Impact"
-                      inputProps={{ min: 0 }}
-                      error={!!errors.impactMetrics?.economicImpact}
-                      helperText={errors.impactMetrics?.economicImpact?.message}
-                    />
                   )}
                 />
               </Grid>

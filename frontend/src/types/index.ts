@@ -30,41 +30,72 @@ export interface Hazard {
   hazardId: string;
   hazardName: string;
   hazardType: HazardType;
-  hazardCategory: HazardCategory;
-  description: string;
+  hazardCategory: 'Natural' | 'Man-made' | 'Emerging' | 'Compound' | 'Cascading';
+  description?: string;
+  hazardDescription?: string;
+  intensities?: Array<{
+    scale: 'Richter' | 'Mercalli' | 'Saffir-Simpson' | 'Fujita' | 'Enhanced Fujita' | 'Beaufort' | 'Custom';
+    value: number;
+    unit: string;
+    description?: string;
+  }>;
+  footprint: {
+    centerLatitude: number;
+    centerLongitude: number;
+    radius: number;
+    unit: 'km' | 'miles' | 'nautical_miles';
+    affectedArea?: number;
+    areaUnit?: 'km2' | 'miles2' | 'acres' | 'hectares';
+    polygon?: number[][][];
+  };
+  temporal: {
+    startTime: string;
+    endTime?: string;
+    duration?: number;
+    durationUnit?: 'seconds' | 'minutes' | 'hours' | 'days' | 'weeks' | 'months';
+    peakIntensityTime?: string;
+    warningTime?: number;
+    warningTimeUnit?: 'seconds' | 'minutes' | 'hours' | 'days';
+  };
   severity: SeverityLevel;
   probability: number;
+  returnPeriod?: number;
+  returnPeriodUnit?: 'years' | 'months' | 'days';
+  economicImpact?: Array<{
+    estimatedLoss: number;
+    currency: string;
+    confidenceLevel?: number;
+    lossType?: 'Property' | 'Business Interruption' | 'Infrastructure' | 'Agricultural' | 'Total';
+    methodology?: string;
+  }>;
   affectedRegions: string[];
   affectedCountries: string[];
-  geographicScope: {
-    regions: string[];
-    countries: string[];
-    coordinates?: {
-      type: 'Polygon' | 'MultiPolygon';
-      coordinates: number[][][];
-    };
+  linkedVulnerabilities?: Array<{
+    vulnerabilityId: string;
+    relationshipType: 'Primary' | 'Secondary' | 'Related' | 'Cascading';
+    vulnerabilityScore?: number;
+    linkedAt: string;
+  }>;
+  climateChangeImpact?: {
+    isClimateRelated: boolean;
+    climateScenario?: 'RCP2.6' | 'RCP4.5' | 'RCP6.0' | 'RCP8.5' | 'Historical' | 'Custom';
+    temperatureIncrease?: number;
+    seaLevelRise?: number;
+    precipitationChange?: number;
   };
-  temporalScope: {
-    startDate: string;
-    endDate?: string;
-    duration?: number;
-    durationUnit?: 'hours' | 'days' | 'weeks' | 'months' | 'years';
-  };
-  impactMetrics: {
-    potentialLoss: number;
-    affectedPopulation: number;
-    economicImpact: number;
-    currency: string;
+  modelData?: {
+    modelProvider?: string;
+    modelVersion?: string;
+    modelType?: 'Probabilistic' | 'Deterministic' | 'Scenario' | 'Hybrid';
+    resolution?: 'High' | 'Medium' | 'Low' | 'Variable';
+    lastModelUpdate?: string;
   };
   isHistorical: boolean;
   isSimulated: boolean;
-  status: 'Active' | 'Inactive' | 'Archived';
-  metadata: {
-    source: string;
-    lastUpdated: string;
-    version: string;
-    tags: string[];
-  };
+  status: 'Active' | 'Inactive' | 'Under Review' | 'Deprecated' | 'Draft';
+  createdBy: string;
+  lastModifiedBy: string;
+  metadata?: Record<string, any>;
   createdAt: string;
   updatedAt: string;
 }
@@ -175,49 +206,101 @@ export interface Vulnerability {
   _id: string;
   vulnerabilityId: string;
   vulnerabilityName: string;
-  vulnerabilityType: VulnerabilityType;
-  vulnerabilityCategory: VulnerabilityCategory;
-  description: string;
+  vulnerabilityDescription?: string;
+  vulnerabilityType: 'Physical' | 'Social' | 'Economic' | 'Environmental' | 'Institutional' | 'Infrastructure' | 'Multi-dimensional';
+  vulnerabilityCategory: 'Individual' | 'Community' | 'Regional' | 'National' | 'Global';
   geographicScope: {
-    region: string;
+    centerLatitude: number;
+    centerLongitude: number;
+    radius: number;
+    radiusUnit: 'km' | 'miles' | 'nautical_miles';
+    area?: number;
+    areaUnit?: 'km2' | 'miles2' | 'acres' | 'hectares';
+    polygon?: number[][][];
+    administrativeLevel: 'National' | 'State/Province' | 'County/District' | 'Municipal' | 'Local' | 'Custom';
     country: string;
-    coordinates?: {
-      type: 'Point' | 'Polygon' | 'MultiPolygon';
-      coordinates: number[] | number[][][] | number[][][][];
-    };
+    state?: string;
+    region: 'North America' | 'Europe' | 'Asia Pacific' | 'Latin America' | 'Middle East' | 'Africa';
   };
-  hazardVulnerabilities: HazardVulnerability[];
   overallVulnerabilityScore: number;
   overallRiskLevel: RiskLevel;
+  confidenceLevel: 'Low' | 'Medium' | 'High' | 'Very High';
+  vulnerabilityFactors?: Array<{
+    factorType: string;
+    factorName: string;
+    factorValue: number;
+    weight: number;
+    unit?: string;
+    description?: string;
+    dataSource?: string;
+    lastUpdated: string;
+  }>;
+  hazardVulnerabilities: Array<{
+    hazardType: HazardType;
+    vulnerabilityScore: number;
+    confidenceLevel: 'Low' | 'Medium' | 'High' | 'Very High';
+    methodology?: string;
+    lastUpdated: string;
+  }>;
+  exposureVulnerabilities?: Array<{
+    exposureType: string;
+    exposureValue: number;
+    currency?: string;
+    exposureUnit?: string;
+    vulnerabilityScore: number;
+    riskLevel: RiskLevel;
+    expectedLoss?: number;
+    expectedLossCurrency?: string;
+  }>;
+  mitigationMeasures?: Array<{
+    measureType: string;
+    measureName: string;
+    description?: string;
+    effectiveness: number;
+    cost?: number;
+    currency?: string;
+    implementationTime?: number;
+    implementationTimeUnit?: string;
+    priority?: 'Low' | 'Medium' | 'High' | 'Critical';
+    status?: 'Planned' | 'In Progress' | 'Completed' | 'Cancelled';
+  }>;
+  linkedHazards?: Array<{
+    hazardId: string;
+    relationshipType: 'Primary' | 'Secondary' | 'Related' | 'Cascading';
+    vulnerabilityScore?: number;
+  }>;
+  linkedLocations?: Array<{
+    locationId: string;
+    vulnerabilityScore?: number;
+    impactLevel?: string;
+  }>;
+  linkedAccounts?: Array<{
+    accountId: string;
+    exposureValue?: number;
+    currency?: string;
+    vulnerabilityScore?: number;
+  }>;
   assessmentDate: string;
-  lastUpdated: string;
-  status: 'Active' | 'Inactive' | 'Archived';
-  metadata: {
-    source: string;
-    assessor: string;
-    version: string;
-    tags: string[];
+  validFrom: string;
+  validTo?: string;
+  methodology?: {
+    assessmentMethod?: string;
+    modelProvider?: string;
+    modelVersion?: string;
+    resolution?: 'High' | 'Medium' | 'Low' | 'Variable';
+    lastModelUpdate?: string;
   };
+  status: 'Active' | 'Inactive' | 'Under Review' | 'Deprecated' | 'Draft';
+  isPublic?: boolean;
+  isTemplate?: boolean;
+  createdBy: string;
+  lastModifiedBy: string;
+  metadata?: Record<string, any>;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface HazardVulnerability {
-  hazardType: HazardType;
-  vulnerabilityScore: number;
-  riskLevel: RiskLevel;
-  factors: {
-    exposure: number;
-    sensitivity: number;
-    adaptiveCapacity: number;
-  };
-  assessmentDetails: {
-    methodology: string;
-    dataQuality: 'High' | 'Medium' | 'Low';
-    confidence: number;
-    limitations: string[];
-  };
-}
+// HazardVulnerability is now part of Vulnerability interface
 
 // Simulation types
 export interface SimulationRun {
@@ -362,26 +445,32 @@ export interface Account {
   _id: string;
   accountId: string;
   accountName: string;
-  accountType: 'Individual' | 'Corporate' | 'Government' | 'NGO';
-  contactInfo: {
-    email: string;
-    phone?: string;
-    address: {
-      street: string;
-      city: string;
-      state: string;
-      country: string;
-      postalCode: string;
-    };
+  accountType: 'Primary' | 'Reinsurance' | 'Retrocession' | 'Facultative' | 'Treaty';
+  parentAccountId?: string;
+  accountLevel: number;
+  totalExposure: number;
+  currency: string;
+  regions: string[];
+  riskProfile: 'Low' | 'Medium' | 'High' | 'Very High';
+  hazardRiskProfile: {
+    overallRiskLevel: 'Low' | 'Medium' | 'High' | 'Very High' | 'Extreme';
+    primaryHazards: Array<{
+      hazardType: HazardType;
+      riskLevel: 'Low' | 'Medium' | 'High' | 'Very High' | 'Extreme';
+      exposureAmount: number;
+      lastAssessed: string;
+    }>;
+    lastRiskAssessment: string;
+    riskAssessmentMethod?: 'Model' | 'Expert' | 'Historical' | 'Hybrid';
   };
-  policies: Policy[];
-  riskProfile: {
-    riskTolerance: 'Low' | 'Medium' | 'High';
-    coverageAreas: string[];
-    totalExposure: number;
-    currency: string;
-  };
-  status: 'Active' | 'Inactive' | 'Suspended';
+  maxExposurePerLocation?: number;
+  maxExposurePerPeril?: number;
+  status: 'Active' | 'Inactive' | 'Suspended' | 'Pending';
+  effectiveDate: string;
+  expiryDate?: string;
+  createdBy: string;
+  lastModifiedBy: string;
+  metadata?: Record<string, any>;
   createdAt: string;
   updatedAt: string;
 }
@@ -416,13 +505,13 @@ export type HazardType =
   | 'Climate Change Impact' | 'Sea Level Rise' | 'Permafrost Thaw' | 'Glacial Lake Outburst';
 
 export type HazardCategory = 
-  | 'Natural' | 'Technological' | 'Biological' | 'Climate' | 'Geological' | 'Meteorological' | 'Hydrological';
+  | 'Natural' | 'Man-made' | 'Emerging' | 'Compound' | 'Cascading';
 
 export type VulnerabilityType = 
-  | 'Physical' | 'Economic' | 'Social' | 'Environmental' | 'Infrastructure' | 'Institutional';
+  | 'Physical' | 'Social' | 'Economic' | 'Environmental' | 'Institutional' | 'Infrastructure' | 'Multi-dimensional';
 
 export type VulnerabilityCategory = 
-  | 'Building' | 'Infrastructure' | 'Population' | 'Economic' | 'Environmental' | 'Social';
+  | 'Individual' | 'Community' | 'Regional' | 'National' | 'Global';
 
 export type SeverityLevel = 
   | 'Minor' | 'Moderate' | 'Major' | 'Severe' | 'Catastrophic' | 'Extreme';
@@ -437,13 +526,13 @@ export interface HazardFilters {
   hazardType?: HazardType;
   hazardCategory?: HazardCategory;
   severity?: SeverityLevel;
-  region?: string;
-  country?: string;
+  region?: string;  // Maps to affectedRegions in backend
+  country?: string; // Maps to affectedCountries in backend
   minProbability?: number;
   maxProbability?: number;
   isHistorical?: boolean;
   isSimulated?: boolean;
-  status?: 'Active' | 'Inactive' | 'Archived';
+  status?: 'Active' | 'Inactive' | 'Under Review' | 'Deprecated' | 'Draft';
 }
 
 export interface VulnerabilityFilters {
@@ -457,7 +546,7 @@ export interface VulnerabilityFilters {
   hazardType?: HazardType;
   minScore?: number;
   maxScore?: number;
-  status?: 'Active' | 'Inactive' | 'Archived';
+  status?: 'Active' | 'Inactive' | 'Under Review' | 'Deprecated' | 'Draft';
 }
 
 export interface SimulationFilters {

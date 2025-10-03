@@ -38,7 +38,7 @@ const hazardTypes: HazardType[] = [
 ];
 
 const hazardCategories: HazardCategory[] = [
-  'Natural', 'Technological', 'Biological', 'Climate', 'Geological', 'Meteorological', 'Hydrological'
+  'Natural', 'Man-made', 'Emerging', 'Compound', 'Cascading'
 ];
 
 const severityLevels: SeverityLevel[] = [

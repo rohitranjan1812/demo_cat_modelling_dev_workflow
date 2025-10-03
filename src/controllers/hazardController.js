@@ -1,10 +1,4 @@
-const Hazard = require('../models/Hazard');
-const HazardEvent = require('../models/HazardEvent');
-const HazardZone = require('../models/HazardZone');
-const HazardScenario = require('../models/HazardScenario');
-const Location = require('../models/Location');
-const Policy = require('../models/Policy');
-const Account = require('../models/Account');
+const HazardService = require('../services/HazardService');
 const { useMockDB, mockResponses } = require('../middleware/mockDataHandler');
 
 // Hazard Controller
