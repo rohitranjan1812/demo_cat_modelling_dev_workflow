@@ -80,6 +80,9 @@ class CATSimulationEngine {
         throw new Error('Simulation run not found');
       }
 
+      // Pre-flight check: Verify required data exists
+      await this.validateRequiredData(simulationRun.configuration);
+
       simulationRun.startSimulation();
       await simulationRun.save();
 
@@ -618,6 +621,38 @@ class CATSimulationEngine {
     const latitude = bounds.minLatitude + Math.random() * (bounds.maxLatitude - bounds.minLatitude);
     const longitude = bounds.minLongitude + Math.random() * (bounds.maxLongitude - bounds.minLongitude);
     return { latitude, longitude };
+  }
+
+  /**
+   * Validate that required data exists in database before starting simulation
+   * @param {Object} config - Simulation configuration
+   * @throws {Error} If required data is missing
+   */
+  async validateRequiredData(config) {
+    const errors = [];
+
+    // Check for hazard data
+    const hazardCount = await Hazard.countDocuments({ status: 'Active' });
+    if (hazardCount === 0) {
+      errors.push('No active hazard data found in database');
+    }
+
+    // Check for vulnerability data
+    const vulnerabilityCount = await Vulnerability.countDocuments({ status: 'Active' });
+    if (vulnerabilityCount === 0) {
+      errors.push('No active vulnerability data found in database');
+    }
+
+    // Check for account data
+    const accountCount = await Account.countDocuments({ status: 'Active' });
+    if (accountCount === 0) {
+      errors.push('No active account data found in database');
+    }
+
+    if (errors.length > 0) {
+      const errorMessage = `Cannot start simulation - missing required data:\n  • ${errors.join('\n  • ')}\n\nPlease run "npm run setup:db" to seed the database with sample data.`;
+      throw new Error(errorMessage);
+    }
   }
 
   // Additional helper methods would be implemented here...
