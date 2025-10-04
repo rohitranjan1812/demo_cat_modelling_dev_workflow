@@ -11,12 +11,16 @@ const Vulnerability = require('../models/Vulnerability');
 const Account = require('../models/Account');
 const CATSimulationEngine = require('./CATSimulationEngine');
 const FinancialCalculationService = require('./FinancialCalculationService');
+const IntegrationService = require('./IntegrationService');
 
 class SimulationService extends BaseService {
   constructor() {
     super(SimulationRun);
-    this.simulationEngine = new CATSimulationEngine();
-    this.financialCalculator = new FinancialCalculationService();
+    // Properly inject services into CATSimulationEngine
+    const integrationService = IntegrationService;
+    const financialService = new FinancialCalculationService();
+    this.simulationEngine = new CATSimulationEngine(integrationService, financialService);
+    this.financialCalculator = financialService;
   }
 
   /**

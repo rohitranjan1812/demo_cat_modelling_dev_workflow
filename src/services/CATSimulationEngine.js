@@ -4,6 +4,7 @@ const Hazard = require('../models/Hazard');
 const Account = require('../models/Account');
 const Vulnerability = require('../models/Vulnerability');
 const ProbabilityDistributionService = require('./ProbabilityDistributionService');
+const IntegrationService = require('./IntegrationService');
 
 /**
  * Comprehensive CAT Simulation Engine
@@ -11,8 +12,10 @@ const ProbabilityDistributionService = require('./ProbabilityDistributionService
  * with advanced probability distributions and financial modeling
  */
 class CATSimulationEngine {
-  constructor() {
+  constructor(integrationService = null, financialService = null) {
     this.probService = new ProbabilityDistributionService();
+    this.integrationService = integrationService || IntegrationService;
+    this.financialService = financialService;
     this.runningSimulations = new Map();
   }
 
@@ -365,7 +368,8 @@ class CATSimulationEngine {
   }
 
   /**
-   * Generate vulnerability impact for an event
+   * Generate vulnerability impact for an event using proper actuarial formula:
+   * Loss = Hazard × Vulnerability × Exposure
    * @param {string} hazardType - Type of hazard
    * @param {Array} geographicImpact - Geographic impact array
    * @param {Object} config - Simulation configuration
@@ -375,23 +379,67 @@ class CATSimulationEngine {
     const impacts = [];
     
     for (const geoImpact of geographicImpact) {
+      // Get vulnerabilities affecting this location
       const vulnerabilities = await this.getVulnerabilitiesForLocation(
         geoImpact.affectedLatitude, 
         geoImpact.affectedLongitude, 
-        config
+        { searchRadius: geoImpact.affectedRadius || 50, hazardTypes: [hazardType] }
+      );
+      
+      // Get exposures at this location
+      const exposures = await this.getExposuresForLocation(
+        geoImpact.affectedLatitude, 
+        geoImpact.affectedLongitude, 
+        { searchRadius: geoImpact.affectedRadius || 50 }
       );
       
       for (const vuln of vulnerabilities) {
-        const vulnerabilityScore = vuln.overallVulnerabilityScore;
-        const vulnerabilityMultiplier = this.calculateVulnerabilityMultiplier(vulnerabilityScore);
-        const adjustedLoss = geoImpact.intensityAtLocation * vulnerabilityMultiplier;
-        
-        impacts.push({
-          vulnerabilityId: vuln.vulnerabilityId,
-          vulnerabilityScore,
-          vulnerabilityMultiplier,
-          adjustedLoss
-        });
+        for (const exposure of exposures) {
+          // Calculate damage ratio using hazard intensity and vulnerability
+          const damageRatio = this.calculateDamageRatio(
+            hazardType,
+            geoImpact.intensityAtLocation,
+            vuln.overallVulnerabilityScore,
+            exposure.assetCharacteristics
+          );
+          
+          // Calculate gross loss: Hazard × Vulnerability × Exposure
+          const hazardFactor = geoImpact.intensityAtLocation / 10; // Normalize to 0-1
+          const vulnerabilityFactor = vuln.overallVulnerabilityScore; // Already 0-1
+          const exposureValue = exposure.totalInsuredValue;
+          
+          const grossLoss = exposureValue * damageRatio;
+          
+          // Apply policy terms (deductibles, limits)
+          const deductible = exposure.coverageDetails?.deductible || 0;
+          const limit = exposure.coverageDetails?.limit || exposureValue;
+          const coinsurance = (exposure.coverageDetails?.coinsurance || 100) / 100;
+          
+          // Calculate net loss after policy terms
+          const lossAboveDeductible = Math.max(0, grossLoss - deductible);
+          const lossWithinLimit = Math.min(lossAboveDeductible, limit);
+          const netLoss = lossWithinLimit * coinsurance;
+          
+          impacts.push({
+            vulnerabilityId: vuln.vulnerabilityId,
+            exposureId: exposure.exposureId,
+            accountId: exposure.accountId,
+            policyId: exposure.policyId,
+            vulnerabilityScore: vuln.overallVulnerabilityScore,
+            hazardIntensity: geoImpact.intensityAtLocation,
+            damageRatio,
+            exposureValue,
+            grossLoss,
+            deductible,
+            limit,
+            coinsurance,
+            netLoss,
+            location: {
+              latitude: geoImpact.affectedLatitude,
+              longitude: geoImpact.affectedLongitude
+            }
+          });
+        }
       }
     }
     
@@ -399,49 +447,175 @@ class CATSimulationEngine {
   }
 
   /**
-   * Generate exposure impact for an event
+   * Calculate damage ratio using proper actuarial logic
+   * Damage Ratio = f(Hazard Intensity, Vulnerability Score, Asset Characteristics)
+   * @param {string} hazardType - Type of hazard
+   * @param {number} hazardIntensity - Hazard intensity value
+   * @param {number} vulnerabilityScore - Vulnerability score (0-1)
+   * @param {Object} assetCharacteristics - Asset characteristics
+   * @returns {number} Damage ratio (0-1)
+   */
+  calculateDamageRatio(hazardType, hazardIntensity, vulnerabilityScore, assetCharacteristics = {}) {
+    // Normalize hazard intensity to 0-1 scale (assuming max intensity is 10)
+    const normalizedIntensity = Math.min(hazardIntensity / 10, 1);
+    
+    // Base damage ratio from hazard and vulnerability
+    let baseDamageRatio = normalizedIntensity * vulnerabilityScore;
+    
+    // Apply peril-specific damage functions
+    switch (hazardType) {
+      case 'Earthquake':
+        // Earthquake damage is highly non-linear
+        baseDamageRatio = Math.pow(normalizedIntensity, 2) * vulnerabilityScore;
+        // Adjust for construction type
+        if (assetCharacteristics.constructionType === 'Wood Frame') {
+          baseDamageRatio *= 1.3;
+        } else if (assetCharacteristics.constructionType === 'Concrete') {
+          baseDamageRatio *= 0.7;
+        }
+        break;
+        
+      case 'Hurricane':
+      case 'Typhoon':
+      case 'Cyclone':
+        // Wind damage increases exponentially with intensity
+        baseDamageRatio = Math.pow(normalizedIntensity, 1.5) * vulnerabilityScore;
+        // Adjust for roof type
+        if (assetCharacteristics.roofType === 'Flat') {
+          baseDamageRatio *= 1.2;
+        }
+        break;
+        
+      case 'Flood':
+      case 'Flash Flood':
+        // Flood damage is more linear but catastrophic at high levels
+        baseDamageRatio = normalizedIntensity * vulnerabilityScore;
+        // Adjust for basement presence
+        if (assetCharacteristics.basementPresent) {
+          baseDamageRatio *= 1.4;
+        }
+        // Adjust for number of stories (lower stories more vulnerable)
+        if (assetCharacteristics.numberOfStories === 1) {
+          baseDamageRatio *= 1.3;
+        }
+        break;
+        
+      case 'Wildfire':
+      case 'Forest Fire':
+      case 'Bushfire':
+        // Wildfire damage tends to be total or minimal
+        baseDamageRatio = normalizedIntensity > 0.6 ? 0.9 * vulnerabilityScore : 0.3 * vulnerabilityScore;
+        // Adjust for construction type
+        if (assetCharacteristics.constructionType === 'Wood Frame') {
+          baseDamageRatio *= 1.5;
+        }
+        break;
+        
+      case 'Tornado':
+        // Tornado damage is extreme but localized
+        baseDamageRatio = Math.pow(normalizedIntensity, 2.5) * vulnerabilityScore;
+        break;
+        
+      case 'Hail':
+        // Hail damage primarily affects roof and exterior
+        baseDamageRatio = normalizedIntensity * vulnerabilityScore * 0.6; // Typically partial damage
+        break;
+        
+      default:
+        // Default linear relationship
+        baseDamageRatio = normalizedIntensity * vulnerabilityScore;
+    }
+    
+    // Apply age factor if available
+    if (assetCharacteristics.yearBuilt) {
+      const age = new Date().getFullYear() - assetCharacteristics.yearBuilt;
+      const ageFactor = 1 + (age / 100) * 0.2; // 20% increase per 100 years
+      baseDamageRatio *= Math.min(ageFactor, 1.5); // Cap at 50% increase
+    }
+    
+    // Ensure damage ratio is between 0 and 1
+    return Math.max(0, Math.min(baseDamageRatio, 1));
+  }
+
+  /**
+   * Generate exposure impact for an event using the Exposure model
+   * This aggregates exposure data at the account level
    * @param {string} hazardType - Type of hazard
    * @param {Array} geographicImpact - Geographic impact array
    * @param {Object} financialImpact - Financial impact object
    * @param {Object} config - Simulation configuration
-   * @returns {Promise<Array>} Array of exposure impact objects
+   * @returns {Promise<Array>} Array of exposure impact objects aggregated by account
    */
   async generateExposureImpact(hazardType, geographicImpact, financialImpact, config) {
     const impacts = [];
+    const accountExposureMap = new Map();
     
     for (const geoImpact of geographicImpact) {
-      const accounts = await this.getAccountsForLocation(
+      // Get exposures at this location using the new Exposure model
+      const exposures = await this.getExposuresForLocation(
         geoImpact.affectedLatitude, 
         geoImpact.affectedLongitude, 
-        config
+        { searchRadius: geoImpact.affectedRadius || 50 }
       );
       
-      for (const account of accounts) {
-        const exposureAmount = account.totalExposure;
-        const lossRatio = this.calculateLossRatio(hazardType, geoImpact.intensityAtLocation);
-        const actualLoss = exposureAmount * lossRatio;
-        const deductible = this.calculateDeductible(account, hazardType);
-        const limit = this.calculateLimit(account, hazardType);
-        const netLoss = Math.max(0, Math.min(actualLoss - deductible, limit || actualLoss));
+      for (const exposure of exposures) {
+        const accountId = exposure.accountId;
         
-        impacts.push({
-          accountId: account.accountId,
-          policyId: this.generatePolicyId(account),
-          exposureAmount,
-          lossRatio,
-          actualLoss,
-          deductible,
-          limit,
-          netLoss
-        });
+        // Aggregate exposures by account
+        if (!accountExposureMap.has(accountId)) {
+          accountExposureMap.set(accountId, {
+            accountId,
+            policyId: exposure.policyId,
+            exposureAmount: 0,
+            totalExposures: 0,
+            exposuresByType: {},
+            exposureIds: []
+          });
+        }
+        
+        const accountData = accountExposureMap.get(accountId);
+        accountData.exposureAmount += exposure.totalInsuredValue;
+        accountData.totalExposures += 1;
+        accountData.exposureIds.push(exposure.exposureId);
+        
+        // Track exposure by type
+        const expType = exposure.exposureType;
+        accountData.exposuresByType[expType] = 
+          (accountData.exposuresByType[expType] || 0) + exposure.totalInsuredValue;
       }
+    }
+    
+    // Convert map to array and calculate losses
+    for (const [accountId, accountData] of accountExposureMap) {
+      const exposureAmount = accountData.exposureAmount;
+      const lossRatio = this.calculateLossRatio(hazardType, geographicImpact[0]?.intensityAtLocation || 5);
+      const actualLoss = exposureAmount * lossRatio;
+      
+      // Use average deductible and limit (simplified for account-level aggregation)
+      const deductible = exposureAmount * 0.05; // 5% deductible
+      const limit = exposureAmount * 0.9; // 90% limit
+      const netLoss = Math.max(0, Math.min(actualLoss - deductible, limit));
+      
+      impacts.push({
+        accountId: accountData.accountId,
+        policyId: accountData.policyId,
+        exposureAmount,
+        totalExposures: accountData.totalExposures,
+        exposuresByType: accountData.exposuresByType,
+        exposureIds: accountData.exposureIds,
+        lossRatio,
+        actualLoss,
+        deductible,
+        limit,
+        netLoss
+      });
     }
     
     return impacts;
   }
 
   /**
-   * Calculate risk metrics for an event
+   * Calculate risk metrics for an event using proper financial calculations
    * @param {Object} financialImpact - Financial impact object
    * @param {Array} exposureImpact - Exposure impact array
    * @param {Array} vulnerabilityImpact - Vulnerability impact array
@@ -450,6 +624,25 @@ class CATSimulationEngine {
   calculateRiskMetrics(financialImpact, exposureImpact, vulnerabilityImpact) {
     const totalExposure = exposureImpact.reduce((sum, impact) => sum + impact.exposureAmount, 0);
     const totalLoss = financialImpact.totalLoss;
+    
+    // If financialService is available, use proper calculations
+    if (this.financialService) {
+      const lossData = [totalLoss];
+      
+      return {
+        expectedLoss: this.financialService.calculateExpectedLoss(lossData),
+        valueAtRisk: this.financialService.calculateValueAtRisk(lossData, 0.95),
+        tailValueAtRisk: this.financialService.calculateTailValueAtRisk(lossData, 0.95),
+        standardDeviation: this.financialService.calculateStandardDeviation ? 
+          this.financialService.calculateStandardDeviation(lossData) : totalLoss * 0.3,
+        riskAdjustedExposure: totalExposure * (1 + (totalLoss / Math.max(totalExposure, 1)) * 0.1),
+        lossRatio: totalExposure > 0 ? totalLoss / totalExposure : 0,
+        diversificationBenefit: this.calculateDiversificationBenefit(exposureImpact),
+        concentrationRisk: this.calculateConcentrationRisk(exposureImpact)
+      };
+    }
+    
+    // Fallback to simplified calculations if financialService not available
     const expectedLoss = totalLoss * 0.8; // 80% of total loss as expected
     const valueAtRisk = totalLoss * 1.2; // 120% of total loss as VaR
     const tailValueAtRisk = totalLoss * 1.5; // 150% of total loss as TVaR
@@ -1093,6 +1286,147 @@ class CATSimulationEngine {
     if (lat >= 35 && lat <= 71 && lng >= -10 && lng <= 40) return 'United Kingdom';
     return 'Unknown';
   }
+
+  /**
+   * Get accounts near a specific location
+   * @param {number} latitude - Latitude coordinate
+   * @param {number} longitude - Longitude coordinate
+   * @param {Object} config - Query configuration
+   * @returns {Promise<Array>} Array of accounts
+   */
+  async getAccountsForLocation(latitude, longitude, config = {}) {
+    const { searchRadius = 50, status = 'Active' } = config;
+    
+    if (this.integrationService && this.integrationService.getAccountsNearLocation) {
+      return await this.integrationService.getAccountsNearLocation({
+        latitude,
+        longitude,
+        radiusKm: searchRadius,
+        status
+      });
+    }
+    
+    // Fallback to direct model query
+    const Location = require('../models/Location');
+    const Account = require('../models/Account');
+    
+    const radiusInDegrees = searchRadius / 111; // Approximate km to degrees
+    
+    const locations = await Location.find({
+      'coordinates.latitude': {
+        $gte: latitude - radiusInDegrees,
+        $lte: latitude + radiusInDegrees
+      },
+      'coordinates.longitude': {
+        $gte: longitude - radiusInDegrees,
+        $lte: longitude + radiusInDegrees
+      }
+    });
+    
+    const accountIds = [...new Set(locations.map(loc => loc.metadata?.get('accountId')).filter(Boolean))];
+    const accounts = await Account.find({ 
+      accountId: { $in: accountIds }, 
+      status: status 
+    });
+    
+    return accounts;
+  }
+
+  /**
+   * Get vulnerabilities affecting a specific location
+   * @param {number} latitude - Latitude coordinate
+   * @param {number} longitude - Longitude coordinate
+   * @param {Object} config - Query configuration
+   * @returns {Promise<Array>} Array of vulnerabilities
+   */
+  async getVulnerabilitiesForLocation(latitude, longitude, config = {}) {
+    const { searchRadius = 50, hazardTypes = [] } = config;
+    
+    if (this.integrationService && this.integrationService.getVulnerabilitiesForLocation) {
+      return await this.integrationService.getVulnerabilitiesForLocation({
+        latitude,
+        longitude,
+        radiusKm: searchRadius,
+        hazardTypes
+      });
+    }
+    
+    // Fallback to direct model query
+    const Vulnerability = require('../models/Vulnerability');
+    
+    const radiusInDegrees = searchRadius / 111; // Approximate km to degrees
+    
+    const query = {
+      'geographicScope.centerLatitude': {
+        $gte: latitude - radiusInDegrees,
+        $lte: latitude + radiusInDegrees
+      },
+      'geographicScope.centerLongitude': {
+        $gte: longitude - radiusInDegrees,
+        $lte: longitude + radiusInDegrees
+      },
+      status: 'Active'
+    };
+    
+    if (hazardTypes.length > 0) {
+      query.applicableHazards = { $in: hazardTypes };
+    }
+    
+    const vulnerabilities = await Vulnerability.find(query);
+    
+    return vulnerabilities;
+  }
+
+  /**
+   * Get exposures near a specific location
+   * @param {number} latitude - Latitude coordinate
+   * @param {number} longitude - Longitude coordinate
+   * @param {Object} config - Query configuration
+   * @returns {Promise<Array>} Array of exposures
+   */
+  async getExposuresForLocation(latitude, longitude, config = {}) {
+    const { searchRadius = 50, exposureTypes = [], perils = [] } = config;
+    
+    if (this.integrationService && this.integrationService.getExposuresNearLocation) {
+      return await this.integrationService.getExposuresNearLocation({
+        latitude,
+        longitude,
+        radiusKm: searchRadius,
+        exposureTypes,
+        perils
+      });
+    }
+    
+    // Fallback to direct model query using Exposure model
+    const Exposure = require('../models/Exposure');
+    
+    const radiusInDegrees = searchRadius / 111; // Approximate km to degrees
+    
+    const query = {
+      'location.latitude': {
+        $gte: latitude - radiusInDegrees,
+        $lte: latitude + radiusInDegrees
+      },
+      'location.longitude': {
+        $gte: longitude - radiusInDegrees,
+        $lte: longitude + radiusInDegrees
+      },
+      status: 'Active'
+    };
+    
+    if (exposureTypes.length > 0) {
+      query.exposureType = { $in: exposureTypes };
+    }
+    
+    if (perils.length > 0) {
+      query['perilExposures.peril'] = { $in: perils };
+    }
+    
+    const exposures = await Exposure.find(query);
+    
+    return exposures;
+  }
 }
 
 module.exports = CATSimulationEngine;
+

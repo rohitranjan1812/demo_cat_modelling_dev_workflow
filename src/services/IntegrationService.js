@@ -771,6 +771,138 @@ class IntegrationService {
     // Implementation would calculate risk trends
     return { trend: 'stable', change: 0 };
   }
+
+  /**
+   * Get accounts near a specific location
+   * @param {Object} params - Location parameters
+   * @returns {Promise<Array>} Array of accounts near the location
+   */
+  static async getAccountsNearLocation(params) {
+    const {
+      latitude,
+      longitude,
+      radiusKm = 50,
+      status = 'Active'
+    } = params;
+
+    try {
+      // Get locations within radius
+      const Location = require('../models/Location');
+      const radiusInDegrees = radiusKm / 111; // Approximate km to degrees
+      
+      const locations = await Location.find({
+        'coordinates.latitude': {
+          $gte: latitude - radiusInDegrees,
+          $lte: latitude + radiusInDegrees
+        },
+        'coordinates.longitude': {
+          $gte: longitude - radiusInDegrees,
+          $lte: longitude + radiusInDegrees
+        }
+      });
+
+      // Extract unique account IDs from locations
+      const accountIds = [...new Set(locations.map(loc => loc.metadata?.get('accountId')).filter(Boolean))];
+      
+      // Fetch accounts
+      const accounts = await Account.find({
+        accountId: { $in: accountIds },
+        ...(status ? { status } : {})
+      });
+
+      return accounts;
+    } catch (error) {
+      throw new Error(`Failed to get accounts near location: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get vulnerabilities affecting a specific location
+   * @param {Object} params - Location parameters
+   * @returns {Promise<Array>} Array of vulnerabilities
+   */
+  static async getVulnerabilitiesForLocation(params) {
+    const {
+      latitude,
+      longitude,
+      radiusKm = 50,
+      hazardTypes = []
+    } = params;
+
+    try {
+      const Vulnerability = require('../models/Vulnerability');
+      const radiusInDegrees = radiusKm / 111; // Approximate km to degrees
+      
+      const query = {
+        'geographicScope.centerLatitude': {
+          $gte: latitude - radiusInDegrees,
+          $lte: latitude + radiusInDegrees
+        },
+        'geographicScope.centerLongitude': {
+          $gte: longitude - radiusInDegrees,
+          $lte: longitude + radiusInDegrees
+        },
+        status: 'Active'
+      };
+
+      if (hazardTypes.length > 0) {
+        query.applicableHazards = { $in: hazardTypes };
+      }
+
+      const vulnerabilities = await Vulnerability.find(query);
+      
+      return vulnerabilities;
+    } catch (error) {
+      throw new Error(`Failed to get vulnerabilities for location: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get exposures near a specific location
+   * @param {Object} params - Location parameters
+   * @returns {Promise<Array>} Array of exposures
+   */
+  static async getExposuresNearLocation(params) {
+    const {
+      latitude,
+      longitude,
+      radiusKm = 50,
+      exposureTypes = [],
+      perils = []
+    } = params;
+
+    try {
+      const Exposure = require('../models/Exposure');
+      const radiusInDegrees = radiusKm / 111; // Approximate km to degrees
+      
+      const query = {
+        'location.latitude': {
+          $gte: latitude - radiusInDegrees,
+          $lte: latitude + radiusInDegrees
+        },
+        'location.longitude': {
+          $gte: longitude - radiusInDegrees,
+          $lte: longitude + radiusInDegrees
+        },
+        status: 'Active'
+      };
+
+      if (exposureTypes.length > 0) {
+        query.exposureType = { $in: exposureTypes };
+      }
+
+      if (perils.length > 0) {
+        query['perilExposures.peril'] = { $in: perils };
+      }
+
+      const exposures = await Exposure.find(query);
+      
+      return exposures;
+    } catch (error) {
+      throw new Error(`Failed to get exposures near location: ${error.message}`);
+    }
+  }
 }
 
 module.exports = IntegrationService;
+
