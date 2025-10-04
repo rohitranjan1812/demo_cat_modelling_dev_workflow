@@ -20,6 +20,24 @@ When any of these collections are empty, the simulation will fail with errors li
 
 ## Solution Steps
 
+### Quick Setup (Recommended)
+
+The fastest way to get started:
+
+```bash
+npm run setup:db
+```
+
+This command will:
+1. Check if MongoDB is running
+2. Verify if database has required data
+3. Automatically seed the database if needed
+4. Confirm everything is ready for simulations
+
+### Manual Setup (Step-by-Step)
+
+If you prefer to run each step manually:
+
 ### Step 1: Verify MongoDB is Running
 
 Run the database verification script:
@@ -212,6 +230,7 @@ Common issues:
 
 ### Scripts Available
 
+- `npm run setup:db` - **Quick setup**: Auto-verify and seed database
 - `npm run verify:db` - Check database status
 - `npm run seed:fixed` - Seed database with sample data
 - `npm run seed:comprehensive` - Seed with more extensive data
@@ -251,10 +270,19 @@ If issues persist after following this guide:
 ## Quick Reference
 
 ```bash
-# Complete setup from scratch
+# Complete setup from scratch (RECOMMENDED)
+npm install                    # Install dependencies
+npm run setup:db              # Auto-setup database (verify & seed)
+npm run start:backend         # Start backend
+npm run start:frontend        # Start frontend (in new terminal)
+```
+
+Or manually:
+```bash
+# Manual setup
 npm install                    # Install dependencies
 npm run verify:db             # Check MongoDB status
-npm run seed:fixed            # Seed database
+npm run seed:fixed            # Seed database if needed
 npm run verify:db             # Verify seeding
 npm run start:backend         # Start backend
 npm run start:frontend        # Start frontend (in new terminal)

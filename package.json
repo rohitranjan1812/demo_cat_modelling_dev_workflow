@@ -16,6 +16,7 @@
     "seed:fixed": "node src/config/comprehensive-seed-fixed.js",
     "seed:production": "node src/config/seed-production.js",
     "verify:db": "node src/config/verify-database.js",
+    "setup:db": "node src/config/quick-setup.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
