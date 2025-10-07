@@ -6,6 +6,10 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+// Import core infrastructure
+const ServiceRegistry = require('./core/ServiceRegistry');
+const { ErrorHandler } = require('./core/ErrorHandler');
+
 // Import database connection
 const database = require('./config/database');
 
@@ -16,8 +20,22 @@ const vulnerabilityRoutes = require('./routes/vulnerabilities');
 const integrationRoutes = require('./routes/integration');
 const simulationRoutes = require('./routes/simulations');
 const authRoutes = require('./routes/auth');
+const exposureRoutes = require('./routes/exposureRoutes');
 
 const app = express();
+
+// Initialize ServiceRegistry
+console.log('Initializing Service Registry...');
+try {
+  ServiceRegistry.initialize();
+  console.log('✓ Service Registry initialized successfully');
+} catch (error) {
+  console.error('❌ Failed to initialize Service Registry:', error);
+  process.exit(1);
+}
+
+// Initialize global error handlers
+ErrorHandler.initializeGlobalHandlers();
 
 // Security middleware
 app.use(helmet());
@@ -80,6 +98,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/accounts', accountRoutes);
+app.use('/api/v1/exposures', exposureRoutes);
 app.use('/api/v1', hazardRoutes);
 app.use('/api/v1', vulnerabilityRoutes);
 app.use('/api/v1/integration', integrationRoutes);
@@ -126,15 +145,20 @@ app.use((error, req, res, next) => {
   });
 });
 
+// Add centralized error handler (should be last middleware)
+app.use(ErrorHandler.middleware());
+
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
+  ServiceRegistry.reset(); // Clean up services
   await database.disconnect();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully');
+  ServiceRegistry.reset(); // Clean up services
   await database.disconnect();
   process.exit(0);
 });

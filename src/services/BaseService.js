@@ -285,27 +285,51 @@ class BaseService {
   }
 
   /**
-   * Find documents near a point
-   * @param {Object} point - Geographic point
+   * Find documents near a specific point using GeoJSON 2dsphere queries
+   * @param {Object} point - Point coordinates (can be {lat, lng} or GeoJSON or {latitude, longitude})
    * @param {Object} options - Query options
    * @returns {Promise<Array>} Nearby documents
    */
   async findNear(point, options = {}) {
     try {
       const {
-        latitudeField = 'footprint.centerLatitude',
-        longitudeField = 'footprint.centerLongitude',
+        locationField = 'footprint.center', // Default to hazard center, can override for other models
         maxDistance = 10000, // meters
         ...queryOptions
       } = options;
 
+      // Normalize point input to GeoJSON format
+      let geoJsonPoint;
+      
+      if (point.type === 'Point' && point.coordinates) {
+        // Already GeoJSON format
+        geoJsonPoint = point;
+      } else if (point.latitude !== undefined && point.longitude !== undefined) {
+        // {latitude, longitude} format
+        geoJsonPoint = {
+          type: 'Point',
+          coordinates: [point.longitude, point.latitude]
+        };
+      } else if (point.lat !== undefined && point.lng !== undefined) {
+        // {lat, lng} format
+        geoJsonPoint = {
+          type: 'Point',
+          coordinates: [point.lng, point.lat]
+        };
+      } else if (Array.isArray(point) && point.length === 2) {
+        // [lng, lat] array format
+        geoJsonPoint = {
+          type: 'Point',
+          coordinates: point
+        };
+      } else {
+        throw new Error('Invalid point format. Expected GeoJSON Point, {latitude, longitude}, {lat, lng}, or [lng, lat]');
+      }
+
       const filter = {
-        [latitudeField]: {
+        [locationField]: {
           $near: {
-            $geometry: {
-              type: 'Point',
-              coordinates: [point.longitude, point.latitude]
-            },
+            $geometry: geoJsonPoint,
             $maxDistance: maxDistance
           }
         }

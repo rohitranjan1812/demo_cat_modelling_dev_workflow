@@ -1,4 +1,12 @@
 const mongoose = require('../config/mongoose-wrapper');
+const { 
+  CURRENCY_VALUES,
+  EXTENDED_PERIL_TYPE_VALUES,
+  SEVERITY_LEVEL_VALUES,
+  REGIONS_VALUES,
+  MODEL_PROVIDER_VALUES,
+  HAZARD_STATUS_VALUES
+} = require('../constants');
 
 // Hazard intensity schema for different measurement scales
 const intensitySchema = new mongoose.Schema({
@@ -26,20 +34,34 @@ const intensitySchema = new mongoose.Schema({
   }
 }, { _id: false });
 
+// GeoJSON Point schema for center coordinates
+const geoJsonPointSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: ['Point'],
+    default: 'Point',
+    required: true
+  },
+  coordinates: {
+    type: [Number], // [longitude, latitude] - GeoJSON standard
+    required: true,
+    validate: {
+      validator: function(coords) {
+        return coords.length === 2 && 
+               coords[0] >= -180 && coords[0] <= 180 && // longitude
+               coords[1] >= -90 && coords[1] <= 90;     // latitude
+      },
+      message: 'Coordinates must be [longitude, latitude] with valid ranges'
+    },
+    index: '2dsphere'
+  }
+}, { _id: false });
+
 // Geographic footprint schema
 const footprintSchema = new mongoose.Schema({
-  centerLatitude: {
-    type: Number,
-    required: true,
-    min: -90,
-    max: 90
-  },
-  
-  centerLongitude: {
-    type: Number,
-    required: true,
-    min: -180,
-    max: 180
+  center: {
+    type: geoJsonPointSchema,
+    required: true
   },
   
   radius: {
@@ -117,7 +139,7 @@ const economicImpactSchema = new mongoose.Schema({
   
   currency: {
     type: String,
-    enum: ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY', 'INR', 'BRL']
+    enum: CURRENCY_VALUES
   },
   
   confidenceLevel: {
@@ -162,22 +184,7 @@ const hazardSchema = new mongoose.Schema({
   hazardType: {
     type: String,
     required: true,
-    enum: [
-      // Natural Hazards
-      'Earthquake', 'Hurricane', 'Typhoon', 'Cyclone', 'Tornado', 'Flood', 'Flash Flood',
-      'Wildfire', 'Forest Fire', 'Bushfire', 'Hail', 'Wind', 'Storm Surge', 'Tsunami',
-      'Volcanic Eruption', 'Landslide', 'Avalanche', 'Drought', 'Heat Wave', 'Cold Wave',
-      'Ice Storm', 'Blizzard', 'Sandstorm', 'Dust Storm',
-      
-      // Man-made Hazards
-      'Terrorism', 'Cyber Attack', 'Nuclear Accident', 'Chemical Spill', 'Oil Spill',
-      'Industrial Accident', 'Transportation Accident', 'Infrastructure Failure',
-      'Pandemic', 'Biological Attack', 'Radiological Attack',
-      
-      // Emerging Hazards
-      'Space Weather', 'Solar Flare', 'Asteroid Impact', 'Climate Change Impact',
-      'Sea Level Rise', 'Permafrost Thaw', 'Glacial Lake Outburst'
-    ],
+    enum: EXTENDED_PERIL_TYPE_VALUES,
     index: true
   },
   
@@ -207,7 +214,7 @@ const hazardSchema = new mongoose.Schema({
   severity: {
     type: String,
     required: true,
-    enum: ['Minor', 'Moderate', 'Major', 'Severe', 'Catastrophic', 'Extreme'],
+    enum: SEVERITY_LEVEL_VALUES,
     index: true
   },
   
@@ -234,7 +241,7 @@ const hazardSchema = new mongoose.Schema({
   // Affected Regions
   affectedRegions: [{
     type: String,
-    enum: ['North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East', 'Africa']
+    enum: REGIONS_VALUES
   }],
   
   affectedCountries: [{
@@ -328,7 +335,7 @@ const hazardSchema = new mongoose.Schema({
   modelData: {
     modelProvider: {
       type: String,
-      enum: ['RMS', 'AIR', 'CoreLogic', 'Karen Clark', 'JBA', 'Custom', 'Multiple']
+      enum: MODEL_PROVIDER_VALUES
     },
     
     modelVersion: {
@@ -385,7 +392,7 @@ const hazardSchema = new mongoose.Schema({
   // Status and Metadata
   status: {
     type: String,
-    enum: ['Active', 'Inactive', 'Under Review', 'Deprecated', 'Draft'],
+    enum: HAZARD_STATUS_VALUES,
     default: 'Active',
     index: true
   },

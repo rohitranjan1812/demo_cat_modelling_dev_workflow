@@ -3,17 +3,32 @@ const SimulationRun = require('../models/SimulationRun');
 const Hazard = require('../models/Hazard');
 const Account = require('../models/Account');
 const Vulnerability = require('../models/Vulnerability');
-const ProbabilityDistributionService = require('./ProbabilityDistributionService');
 
 /**
  * Comprehensive CAT Simulation Engine
  * Generates massive volumes of simulation data across thousands of years
  * with advanced probability distributions and financial modeling
+ * 
+ * @param {IntegrationService} integrationService - Service for cross-entity queries
+ * @param {FinancialCalculationService} financialService - Service for financial calculations
+ * @param {ProbabilityDistributionService} probabilityService - Service for probability distributions
  */
 class CATSimulationEngine {
-  constructor() {
-    this.probService = new ProbabilityDistributionService();
+  constructor(integrationService = null, financialService = null, probabilityService = null) {
+    // Injected services
+    this.integrationService = integrationService;
+    this.financialService = financialService;
+    this.probService = probabilityService;
+    
+    // Internal state
     this.runningSimulations = new Map();
+    
+    // Validate required dependencies
+    if (!this.probService) {
+      console.warn('CATSimulationEngine: ProbabilityDistributionService not injected, creating default instance');
+      const ProbabilityDistributionService = require('./ProbabilityDistributionService');
+      this.probService = new ProbabilityDistributionService();
+    }
   }
 
   /**

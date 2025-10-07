@@ -2,6 +2,16 @@
 
 A scalable and flexible MongoDB-based exposure data model for cat modeling simulation projects. This system supports complex account structures, policy hierarchies, geographic risk distribution, and dynamic sublimit management.
 
+## 📁 Documentation & Workspace
+
+**[📚 View Workspace Structure](WORKSPACE_STRUCTURE.md)** - Complete project organization guide
+
+**Quick Links:**
+- 🎯 [E2E Testing Guide](documentation/guides/E2E_TESTING_GUIDE.md) - 105 test scenarios
+- 📊 [Phase 5 Completion Report](documentation/reports/phase5/E2E_TESTING_COMPLETION_REPORT.md)
+- 🏗️ [Integration Architecture](documentation/guides/INTEGRATION_ARCHITECTURE.md)
+- ⚙️ [MongoDB Setup Guide](documentation/guides/MONGODB_SETUP_GUIDE.md)
+
 ## 🎯 Product Vision
 
 **Mission**: Create a comprehensive, scalable MongoDB-based exposure data model that supports complex cat modeling simulations with flexible account structures, policy hierarchies, geographic risk distribution, and dynamic sublimit management.
@@ -12,6 +22,7 @@ A scalable and flexible MongoDB-based exposure data model for cat modeling simul
 - **Geographic Risk Distribution**: Location-based exposure with risk factors
 - **Dynamic Sublimit Management**: Per peril, region, or coverage type
 - **Special Conditions**: Customizable conditions, exclusions, and endorsements
+- **Exposure Management UI**: Complete React/TypeScript frontend with CRUD operations
 
 ## 🏗️ Architecture
 
@@ -32,12 +43,17 @@ A scalable and flexible MongoDB-based exposure data model for cat modeling simul
 - **Key Features**: Coordinates, risk zones, property characteristics
 - **Relationships**: Associated with policies, risk factors
 
-#### 4. Sublimit Model
+#### 4. Exposure Model
+- **Purpose**: Individual risk exposure tracking and management
+- **Key Features**: Property details, financial values, peril exposure, geospatial data
+- **Relationships**: Linked to accounts, policies, locations
+
+#### 5. Sublimit Model
 - **Purpose**: Dynamic sublimit management
 - **Key Features**: Peril-specific limits, geographic constraints, time-based rules
 - **Relationships**: Can be associated with accounts, policies, or locations
 
-#### 5. Special Condition Model
+#### 6. Special Condition Model
 - **Purpose**: Customizable conditions and endorsements
 - **Key Features**: Coverage modifications, financial impacts, compliance rules
 - **Relationships**: Can be associated with accounts, policies, or locations

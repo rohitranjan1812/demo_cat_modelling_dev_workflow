@@ -1,25 +1,36 @@
 const mongoose = require('../config/mongoose-wrapper');
+const { 
+  REGIONS_VALUES,
+  PERIL_TYPE_VALUES,
+  RISK_LEVEL_VALUES,
+  EXPOSURE_TYPE_VALUES,
+  OCCUPANCY_TYPE_VALUES,
+  CONSTRUCTION_TYPE_VALUES,
+  CURRENCY_VALUES,
+  MODEL_PROVIDER_VALUES,
+  LOCATION_STATUS_VALUES
+} = require('../constants');
 
-const coordinatesSchema = new mongoose.Schema({
-  latitude: {
-    type: Number,
-    required: true,
-    min: -90,
-    max: 90
+// GeoJSON Point schema for MongoDB 2dsphere compatibility
+const geoJsonPointSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: ['Point'],
+    default: 'Point',
+    required: true
   },
-  
-  longitude: {
-    type: Number,
+  coordinates: {
+    type: [Number], // [longitude, latitude] - GeoJSON standard
     required: true,
-    min: -180,
-    max: 180
-  },
-  
-  elevation: {
-    type: Number,
-    min: -1000,
-    max: 10000,
-    default: 0
+    validate: {
+      validator: function(coords) {
+        return coords.length === 2 && 
+               coords[0] >= -180 && coords[0] <= 180 && // longitude
+               coords[1] >= -90 && coords[1] <= 90;     // latitude
+      },
+      message: 'Coordinates must be [longitude, latitude] with valid ranges'
+    },
+    index: '2dsphere'
   }
 }, { _id: false });
 
@@ -60,7 +71,7 @@ const addressSchema = new mongoose.Schema({
   region: {
     type: String,
     required: true,
-    enum: ['North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East', 'Africa']
+    enum: REGIONS_VALUES
   }
 }, { _id: false });
 
@@ -68,7 +79,7 @@ const riskFactorSchema = new mongoose.Schema({
   peril: {
     type: String,
     required: true,
-    enum: ['Earthquake', 'Hurricane', 'Flood', 'Wildfire', 'Tornado', 'Hail', 'Wind', 'Storm Surge', 'Tsunami', 'Volcanic']
+    enum: PERIL_TYPE_VALUES
   },
   
   riskScore: {
@@ -119,11 +130,17 @@ const locationSchema = new mongoose.Schema({
     maxlength: 200
   },
   
-  // Geographic Information
-  coordinates: {
-    type: coordinatesSchema,
-    required: true,
-    index: '2dsphere'
+  // Geographic Information - GeoJSON Point format for 2dsphere compatibility
+  location: {
+    type: geoJsonPointSchema,
+    required: true
+  },
+  
+  elevation: {
+    type: Number,
+    min: -1000,
+    max: 10000,
+    default: 0
   },
   
   address: {
@@ -135,7 +152,7 @@ const locationSchema = new mongoose.Schema({
   riskZones: [{
     zoneType: {
       type: String,
-      enum: ['Flood', 'Earthquake', 'Hurricane', 'Wildfire', 'Tornado', 'Wind', 'Storm Surge']
+      enum: PERIL_TYPE_VALUES
     },
     
     zoneCode: {
@@ -150,7 +167,7 @@ const locationSchema = new mongoose.Schema({
     
     riskLevel: {
       type: String,
-      enum: ['Low', 'Medium', 'High', 'Very High', 'Extreme'],
+      enum: RISK_LEVEL_VALUES,
       required: true
     }
   }],
@@ -168,7 +185,7 @@ const locationSchema = new mongoose.Schema({
     
     exposureLevel: {
       type: String,
-      enum: ['None', 'Low', 'Medium', 'High', 'Very High', 'Extreme'],
+      enum: EXPOSURE_TYPE_VALUES,
       required: true
     },
     
@@ -204,7 +221,7 @@ const locationSchema = new mongoose.Schema({
     
     riskLevel: {
       type: String,
-      enum: ['Very Low', 'Low', 'Medium', 'High', 'Very High', 'Extreme'],
+      enum: RISK_LEVEL_VALUES,
       required: true
     },
     
@@ -223,13 +240,13 @@ const locationSchema = new mongoose.Schema({
   propertyCharacteristics: {
     occupancyType: {
       type: String,
-      enum: ['Residential', 'Commercial', 'Industrial', 'Agricultural', 'Mixed'],
+      enum: OCCUPANCY_TYPE_VALUES,
       required: true
     },
     
     constructionType: {
       type: String,
-      enum: ['Frame', 'Masonry', 'Concrete', 'Steel', 'Mixed'],
+      enum: CONSTRUCTION_TYPE_VALUES,
       required: true
     },
     
@@ -273,7 +290,7 @@ const locationSchema = new mongoose.Schema({
     type: String,
     required: true,
     default: 'USD',
-    enum: ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD']
+    enum: CURRENCY_VALUES
   },
   
   // Associated Policies
@@ -305,7 +322,7 @@ const locationSchema = new mongoose.Schema({
   catModelData: {
     modelProvider: {
       type: String,
-      enum: ['RMS', 'AIR', 'CoreLogic', 'Karen Clark', 'Custom']
+      enum: MODEL_PROVIDER_VALUES
     },
     
     modelVersion: {
@@ -328,7 +345,7 @@ const locationSchema = new mongoose.Schema({
   // Status and Metadata
   status: {
     type: String,
-    enum: ['Active', 'Inactive', 'Under Review', 'Excluded'],
+    enum: LOCATION_STATUS_VALUES,
     default: 'Active',
     index: true
   },

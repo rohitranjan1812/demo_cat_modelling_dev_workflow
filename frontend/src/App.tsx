@@ -5,6 +5,7 @@ import { Box, CircularProgress, Typography } from '@mui/material';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout/Layout';
 import Dashboard from './pages/Dashboard/Dashboard';
+import ExposuresPage from './pages/Exposures';
 import HazardsPage from './pages/Hazards/HazardsPage';
 import VulnerabilitiesPage from './pages/Vulnerabilities/VulnerabilitiesPage';
 import SimulationsPage from './pages/Simulations/SimulationsPage';
@@ -49,6 +50,7 @@ const ProtectedApp: React.FC = () => {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/exposures" element={<ExposuresPage />} />
           <Route path="/hazards" element={<HazardsPage />} />
           <Route path="/vulnerabilities" element={<VulnerabilitiesPage />} />
           <Route path="/simulations" element={<SimulationsPage />} />

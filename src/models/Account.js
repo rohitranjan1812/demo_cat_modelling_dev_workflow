@@ -1,4 +1,12 @@
 const mongoose = require('../config/mongoose-wrapper');
+const { 
+  ACCOUNT_TYPE_VALUES, 
+  CURRENCY_VALUES, 
+  REGIONS_VALUES, 
+  ACCOUNT_STATUS_VALUES,
+  EXTENDED_PERIL_TYPE_VALUES,
+  RISK_LEVEL_VALUES
+} = require('../constants');
 
 const accountSchema = new mongoose.Schema({
   // Basic Account Information
@@ -25,7 +33,7 @@ const accountSchema = new mongoose.Schema({
   accountType: {
     type: String,
     required: true,
-    enum: ['Primary', 'Reinsurance', 'Retrocession', 'Facultative', 'Treaty'],
+    enum: ACCOUNT_TYPE_VALUES,
     index: true
   },
   
@@ -57,13 +65,13 @@ const accountSchema = new mongoose.Schema({
     type: String,
     required: true,
     default: 'USD',
-    enum: ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD']
+    enum: CURRENCY_VALUES
   },
   
   // Geographic Scope
   regions: [{
     type: String,
-    enum: ['North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East', 'Africa']
+    enum: REGIONS_VALUES
   }],
   
   // Risk Profile
@@ -77,19 +85,19 @@ const accountSchema = new mongoose.Schema({
   hazardRiskProfile: {
     overallRiskLevel: {
       type: String,
-      enum: ['Low', 'Medium', 'High', 'Very High', 'Extreme'],
+      enum: RISK_LEVEL_VALUES,
       default: 'Medium'
     },
     
     primaryHazards: [{
       hazardType: {
         type: String,
-        enum: ['Earthquake', 'Hurricane', 'Typhoon', 'Cyclone', 'Tornado', 'Flood', 'Flash Flood', 'Wildfire', 'Forest Fire', 'Bushfire', 'Hail', 'Wind', 'Storm Surge', 'Tsunami', 'Volcanic Eruption', 'Landslide', 'Avalanche', 'Drought', 'Heat Wave', 'Cold Wave', 'Ice Storm', 'Blizzard', 'Sandstorm', 'Dust Storm', 'Terrorism', 'Cyber Attack', 'Nuclear Accident', 'Chemical Spill', 'Oil Spill', 'Industrial Accident', 'Transportation Accident', 'Infrastructure Failure', 'Pandemic', 'Biological Attack', 'Radiological Attack', 'Space Weather', 'Solar Flare', 'Asteroid Impact', 'Climate Change Impact', 'Sea Level Rise', 'Permafrost Thaw', 'Glacial Lake Outburst']
+        enum: EXTENDED_PERIL_TYPE_VALUES
       },
       
       riskLevel: {
         type: String,
-        enum: ['Low', 'Medium', 'High', 'Very High', 'Extreme']
+        enum: RISK_LEVEL_VALUES
       },
       
       exposureAmount: {
@@ -130,7 +138,7 @@ const accountSchema = new mongoose.Schema({
   // Status and Metadata
   status: {
     type: String,
-    enum: ['Active', 'Inactive', 'Suspended', 'Pending'],
+    enum: ACCOUNT_STATUS_VALUES,
     default: 'Active',
     index: true
   },

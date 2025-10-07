@@ -1,6 +1,14 @@
 const HazardService = require('../services/HazardService');
 const { useMockDB, mockResponses } = require('../middleware/mockDataHandler');
 
+// Import models for HazardAnalysisController
+const Hazard = require('../models/Hazard');
+const HazardEvent = require('../models/HazardEvent');
+const HazardZone = require('../models/HazardZone');
+const HazardScenario = require('../models/HazardScenario');
+const Policy = require('../models/Policy');
+const Location = require('../models/Location');
+
 // Hazard Controller
 class HazardController {
   // Get all hazards with filtering and pagination
@@ -10,60 +18,16 @@ class HazardController {
       if (useMockDB) {
         return res.json(mockResponses.emptyList(req));
       }
-      const {
-        page = 1,
-        limit = 10,
-        hazardType,
-        hazardCategory,
-        severity,
-        region,
-        country,
-        minProbability,
-        maxProbability,
-        isHistorical,
-        isSimulated,
-        status = 'Active'
-      } = req.query;
 
-      const filter = { status };
+      const hazardService = new HazardService();
+      const result = await hazardService.getHazards(req.query);
       
-      if (hazardType) filter.hazardType = hazardType;
-      if (hazardCategory) filter.hazardCategory = hazardCategory;
-      if (severity) filter.severity = severity;
-      if (region) filter.affectedRegions = region;
-      if (country) filter.affectedCountries = country;
-      if (isHistorical !== undefined) filter.isHistorical = isHistorical === 'true';
-      if (isSimulated !== undefined) filter.isSimulated = isSimulated === 'true';
-      
-      if (minProbability || maxProbability) {
-        filter.probability = {};
-        if (minProbability) filter.probability.$gte = parseFloat(minProbability);
-        if (maxProbability) filter.probability.$lte = parseFloat(maxProbability);
-      }
-
-      const hazards = await Hazard.find(filter)
-        .limit(limit * 1)
-        .skip((page - 1) * limit)
-        .sort({ createdAt: -1 })
-        .exec();
-
-      const total = await Hazard.countDocuments(filter);
-
-      res.json({
-        success: true,
-        data: hazards,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / limit)
-        }
-      });
+      res.json(result);
     } catch (error) {
-      res.status(500).json({
+      res.status(error.statusCode || 500).json({
         success: false,
-        message: 'Error fetching hazards',
-        error: error.message
+        message: error.message || 'Error fetching hazards',
+        timestamp: new Date().toISOString()
       });
     }
   }
@@ -75,28 +39,28 @@ class HazardController {
       if (useMockDB) {
         return res.status(404).json({
           success: false,
-          message: 'Hazard not found (mock mode - no data available)'
+          message: 'Hazard not found (mock mode - no data available)',
+          timestamp: new Date().toISOString()
         });
       }
-      const { id } = req.params;
-      const hazard = await Hazard.findOne({ hazardId: id });
 
-      if (!hazard) {
+      const hazardService = new HazardService();
+      const result = await hazardService.getHazardById(req.params.id);
+      
+      res.json(result);
+    } catch (error) {
+      if (error.message === 'Hazard not found') {
         return res.status(404).json({
           success: false,
-          message: 'Hazard not found'
+          message: error.message,
+          timestamp: new Date().toISOString()
         });
       }
-
-      res.json({
-        success: true,
-        data: hazard
-      });
-    } catch (error) {
-      res.status(500).json({
+      
+      res.status(error.statusCode || 500).json({
         success: false,
-        message: 'Error fetching hazard',
-        error: error.message
+        message: error.message || 'Error fetching hazard',
+        timestamp: new Date().toISOString()
       });
     }
   }

@@ -47,7 +47,8 @@
     "jsonwebtoken": "^9.0.2",
     "mathjs": "^14.8.1",
     "mongoose": "^8.0.3",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.8",

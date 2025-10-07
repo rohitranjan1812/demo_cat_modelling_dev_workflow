@@ -3,7 +3,7 @@
  * Handles all hazard-related business logic and database operations
  */
 
-const BaseService = require('./BaseService');
+const { repositories } = require('../repositories');
 const Hazard = require('../models/Hazard');
 const HazardEvent = require('../models/HazardEvent');
 const HazardZone = require('../models/HazardZone');
@@ -11,9 +11,11 @@ const HazardScenario = require('../models/HazardScenario');
 const Vulnerability = require('../models/Vulnerability');
 const Account = require('../models/Account');
 
-class HazardService extends BaseService {
+class HazardService {
   constructor() {
-    super(Hazard);
+    this.hazardRepository = repositories.hazard;
+    this.locationRepository = repositories.location;
+    this.vulnerabilityRepository = repositories.vulnerability;
   }
 
   /**
@@ -72,7 +74,7 @@ class HazardService extends BaseService {
       const sort = {};
       sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
-      const result = await this.find(filter, {
+      const result = await this.hazardRepository.findPaginated(filter, {
         page: parseInt(page),
         limit: parseInt(limit),
         sort,
@@ -92,7 +94,7 @@ class HazardService extends BaseService {
    */
   async getHazardById(id) {
     try {
-      const hazard = await this.findById(id, {
+      const hazard = await this.hazardRepository.findById(id, {
         populate: ['linkedVulnerabilities', 'linkedAccounts']
       });
 
@@ -135,7 +137,7 @@ class HazardService extends BaseService {
   async createHazard(hazardData, userId) {
     try {
       // Generate hazard ID
-      const hazardCount = await this.count();
+      const hazardCount = await this.hazardRepository.count();
       const hazardId = `HAZ-${(hazardCount + 1).toString().padStart(8, '0')}`;
 
       const newHazardData = {
@@ -177,7 +179,7 @@ class HazardService extends BaseService {
         updatedAt: new Date()
       };
 
-      const updatedHazard = await this.updateById(id, updatePayload);
+      const updatedHazard = await this.hazardRepository.updateById(id, updatePayload);
 
       if (!updatedHazard) {
         throw new Error('Hazard not found');
@@ -197,7 +199,7 @@ class HazardService extends BaseService {
    */
   async deleteHazard(id, userId) {
     try {
-      const deletedHazard = await this.deleteById(id, { soft: true });
+      const deletedHazard = await this.hazardRepository.deleteById(id, { soft: true });
 
       if (!deletedHazard) {
         throw new Error('Hazard not found');
@@ -220,7 +222,7 @@ class HazardService extends BaseService {
    */
   async getHazardsInBounds(bounds, options = {}) {
     try {
-      const result = await this.findWithinBounds(bounds, {
+      const result = await this.hazardRepository.findWithinBounds(bounds, {
         latitudeField: 'footprint.centerLatitude',
         longitudeField: 'footprint.centerLongitude',
         ...options
@@ -242,9 +244,8 @@ class HazardService extends BaseService {
     try {
       const { maxDistance = 50000 } = options; // 50km default
 
-      const result = await this.findNear(location, {
-        latitudeField: 'footprint.centerLatitude',
-        longitudeField: 'footprint.centerLongitude',
+      const result = await this.hazardRepository.findNear(location, {
+        locationField: 'footprint.center',
         maxDistance,
         ...options
       });
@@ -325,10 +326,10 @@ class HazardService extends BaseService {
       const stats = await this.getStatistics(filters, ['hazardType', 'hazardCategory', 'severity']);
       
       // Get additional metrics
-      const totalHazards = await this.count(filters);
-      const activeHazards = await this.count({ ...filters, status: 'Active' });
-      const historicalHazards = await this.count({ ...filters, isHistorical: true });
-      const simulatedHazards = await this.count({ ...filters, isSimulated: true });
+      const totalHazards = await this.hazardRepository.count(filters);
+      const activeHazards = await this.hazardRepository.count({ ...filters, status: 'Active' });
+      const historicalHazards = await this.hazardRepository.count({ ...filters, isHistorical: true });
+      const simulatedHazards = await this.hazardRepository.count({ ...filters, isSimulated: true });
 
       return this.createSuccessResponse({
         totalHazards,
@@ -368,7 +369,7 @@ class HazardService extends BaseService {
    */
   async linkVulnerability(hazardId, vulnerabilityId, relationshipType = 'Primary') {
     try {
-      const hazard = await this.findById(hazardId);
+      const hazard = await this.hazardRepository.findById(hazardId);
       if (!hazard) {
         throw new Error('Hazard not found');
       }
@@ -423,7 +424,7 @@ class HazardService extends BaseService {
    */
   async unlinkVulnerability(hazardId, vulnerabilityId) {
     try {
-      const hazard = await this.findById(hazardId);
+      const hazard = await this.hazardRepository.findById(hazardId);
       if (!hazard) {
         throw new Error('Hazard not found');
       }
@@ -452,6 +453,41 @@ class HazardService extends BaseService {
     } catch (error) {
       throw this.handleError(error);
     }
+  }
+
+  /**
+   * Create a standardized success response
+   * @param {*} data - Response data
+   * @param {string} message - Success message
+   * @param {Object} meta - Additional metadata
+   * @returns {Object} Standardized response
+   */
+  createSuccessResponse(data, message, meta = {}) {
+    return {
+      success: true,
+      message,
+      data,
+      meta: {
+        timestamp: new Date().toISOString(),
+        ...meta
+      }
+    };
+  }
+
+  /**
+   * Handle and format errors
+   * @param {Error} error - Error object
+   * @returns {Error} Formatted error
+   */
+  handleError(error) {
+    console.error('HazardService Error:', error);
+    
+    // Return a standardized error
+    const formattedError = new Error(error.message || 'An error occurred in HazardService');
+    formattedError.statusCode = error.statusCode || 500;
+    formattedError.service = 'HazardService';
+    
+    return formattedError;
   }
 }
 

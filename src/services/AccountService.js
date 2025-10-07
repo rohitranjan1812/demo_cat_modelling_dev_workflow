@@ -3,14 +3,17 @@
  * Handles all account-related business logic and database operations
  */
 
-const BaseService = require('./BaseService');
+const { repositories } = require('../repositories');
 const Account = require('../models/Account');
 const Hazard = require('../models/Hazard');
 const Vulnerability = require('../models/Vulnerability');
 
-class AccountService extends BaseService {
+class AccountService {
   constructor() {
-    super(Account);
+    // AccountService can use location repository for geographic queries
+    this.locationRepository = repositories.location;
+    this.hazardRepository = repositories.hazard;
+    this.vulnerabilityRepository = repositories.vulnerability;
   }
 
   /**
@@ -516,6 +519,43 @@ class AccountService extends BaseService {
 
     return recommendations;
   }
+
+  /**
+   * Create a standardized success response
+   * @param {*} data - Response data
+   * @param {string} message - Success message
+   * @param {Object} meta - Additional metadata
+   * @returns {Object} Standardized response
+   */
+  createSuccessResponse(data, message, meta = {}) {
+    return {
+      success: true,
+      message,
+      data,
+      meta: {
+        timestamp: new Date().toISOString(),
+        ...meta
+      }
+    };
+  }
+
+  /**
+   * Handle and format errors
+   * @param {Error} error - Error object
+   * @returns {Error} Formatted error
+   */
+  handleError(error) {
+    console.error('AccountService Error:', error);
+    
+    // Return a standardized error
+    const formattedError = new Error(error.message || 'An error occurred in AccountService');
+    formattedError.statusCode = error.statusCode || 500;
+    formattedError.service = 'AccountService';
+    
+    return formattedError;
+  }
 }
+
+module.exports = AccountService;
 
 module.exports = AccountService;

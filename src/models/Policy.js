@@ -1,10 +1,21 @@
 const mongoose = require('../config/mongoose-wrapper');
+const { 
+  COVERAGE_TYPE_VALUES,
+  POLICY_TYPE_VALUES,
+  CURRENCY_VALUES,
+  REGIONS_VALUES,
+  EXTENDED_PERIL_TYPE_VALUES,
+  PERIL_TYPE_VALUES,
+  OCCUPANCY_TYPE_VALUES,
+  CONSTRUCTION_TYPE_VALUES,
+  POLICY_STATUS_VALUES
+} = require('../constants');
 
 const coverageSchema = new mongoose.Schema({
   coverageType: {
     type: String,
     required: true,
-    enum: ['Property', 'Liability', 'Business Interruption', 'Cyber', 'Marine', 'Aviation', 'Energy']
+    enum: COVERAGE_TYPE_VALUES
   },
   
   coverageLimit: {
@@ -67,7 +78,7 @@ const policySchema = new mongoose.Schema({
   policyType: {
     type: String,
     required: true,
-    enum: ['Direct', 'Reinsurance', 'Facultative', 'Treaty', 'Retrocession'],
+    enum: POLICY_TYPE_VALUES,
     index: true
   },
   
@@ -97,7 +108,7 @@ const policySchema = new mongoose.Schema({
     type: String,
     required: true,
     default: 'USD',
-    enum: ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD']
+    enum: CURRENCY_VALUES
   },
   
   // Policy Period
@@ -116,13 +127,13 @@ const policySchema = new mongoose.Schema({
   // Geographic Scope
   coveredRegions: [{
     type: String,
-    enum: ['North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East', 'Africa']
+    enum: REGIONS_VALUES
   }],
   
   // Peril Coverage
   coveredPerils: [{
     type: String,
-    enum: ['Earthquake', 'Hurricane', 'Typhoon', 'Cyclone', 'Tornado', 'Flood', 'Flash Flood', 'Wildfire', 'Forest Fire', 'Bushfire', 'Hail', 'Wind', 'Storm Surge', 'Tsunami', 'Volcanic Eruption', 'Landslide', 'Avalanche', 'Drought', 'Heat Wave', 'Cold Wave', 'Ice Storm', 'Blizzard', 'Sandstorm', 'Dust Storm', 'Terrorism', 'Cyber Attack', 'Nuclear Accident', 'Chemical Spill', 'Oil Spill', 'Industrial Accident', 'Transportation Accident', 'Infrastructure Failure', 'Pandemic', 'Biological Attack', 'Radiological Attack', 'Space Weather', 'Solar Flare', 'Asteroid Impact', 'Climate Change Impact', 'Sea Level Rise', 'Permafrost Thaw', 'Glacial Lake Outburst']
+    enum: EXTENDED_PERIL_TYPE_VALUES
   }],
   
   // Hazard Coverage
@@ -167,12 +178,12 @@ const policySchema = new mongoose.Schema({
   riskCharacteristics: {
     occupancyType: {
       type: String,
-      enum: ['Residential', 'Commercial', 'Industrial', 'Agricultural', 'Mixed']
+      enum: OCCUPANCY_TYPE_VALUES
     },
     
     constructionType: {
       type: String,
-      enum: ['Frame', 'Masonry', 'Concrete', 'Steel', 'Mixed']
+      enum: CONSTRUCTION_TYPE_VALUES
     },
     
     yearBuilt: {
@@ -198,7 +209,7 @@ const policySchema = new mongoose.Schema({
     peril: {
       type: String,
       required: true,
-      enum: ['Earthquake', 'Hurricane', 'Flood', 'Wildfire', 'Tornado', 'Hail', 'Wind', 'Storm Surge', 'Tsunami', 'Volcanic']
+      enum: PERIL_TYPE_VALUES
     },
     
     limit: {
@@ -215,7 +226,7 @@ const policySchema = new mongoose.Schema({
     
     region: {
       type: String,
-      enum: ['North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East', 'Africa']
+      enum: REGIONS_VALUES
     }
   }],
   
@@ -252,7 +263,7 @@ const policySchema = new mongoose.Schema({
   // Status and Metadata
   status: {
     type: String,
-    enum: ['Active', 'Inactive', 'Cancelled', 'Expired', 'Pending'],
+    enum: POLICY_STATUS_VALUES,
     default: 'Active',
     index: true
   },

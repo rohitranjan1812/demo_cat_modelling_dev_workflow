@@ -1,6 +1,10 @@
 /**
  * Simulation Service for CAT Modeling Platform
  * Handles all simulation-related business logic and database operations
+ * 
+ * @param {CATSimulationEngine} simulationEngine - Simulation engine instance
+ * @param {FinancialCalculationService} financialService - Financial calculations service
+ * @param {IntegrationService} integrationService - Integration service
  */
 
 const BaseService = require('./BaseService');
@@ -9,14 +13,28 @@ const SimulationEvent = require('../models/SimulationEvent');
 const Hazard = require('../models/Hazard');
 const Vulnerability = require('../models/Vulnerability');
 const Account = require('../models/Account');
-const CATSimulationEngine = require('./CATSimulationEngine');
-const FinancialCalculationService = require('./FinancialCalculationService');
 
 class SimulationService extends BaseService {
-  constructor() {
+  constructor(simulationEngine = null, financialService = null, integrationService = null) {
     super(SimulationRun);
-    this.simulationEngine = new CATSimulationEngine();
-    this.financialCalculator = new FinancialCalculationService();
+    
+    // Injected services
+    this.simulationEngine = simulationEngine;
+    this.financialService = financialService;
+    this.integrationService = integrationService;
+    
+    // Fallback for non-DI initialization (backward compatibility)
+    if (!this.simulationEngine) {
+      console.warn('SimulationService: No engine injected, creating default instance');
+      const CATSimulationEngine = require('./CATSimulationEngine');
+      this.simulationEngine = new CATSimulationEngine();
+    }
+    
+    if (!this.financialService) {
+      console.warn('SimulationService: No financial service injected, creating default instance');
+      const FinancialCalculationService = require('./FinancialCalculationService');
+      this.financialService = new FinancialCalculationService();
+    }
   }
 
   /**

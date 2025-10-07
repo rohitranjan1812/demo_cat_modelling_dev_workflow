@@ -8,15 +8,27 @@ const Location = require('../models/Location');
 /**
  * Integration Service for seamless data flow between exposure, hazard, and vulnerability modules
  * This service provides unified risk assessment and financial calculation interfaces
+ * 
+ * @param {HazardService} hazardService - Optional hazard service instance
+ * @param {VulnerabilityService} vulnerabilityService - Optional vulnerability service instance
+ * @param {AccountService} accountService - Optional account service instance
+ * @param {ExposureService} exposureService - Optional exposure service instance
  */
 class IntegrationService {
+  constructor(hazardService = null, vulnerabilityService = null, accountService = null, exposureService = null) {
+    // Injected services (optional for backward compatibility)
+    this.hazardService = hazardService;
+    this.vulnerabilityService = vulnerabilityService;
+    this.accountService = accountService;
+    this.exposureService = exposureService;
+  }
   
   /**
    * Get comprehensive risk assessment for a specific location
    * @param {Object} params - Location and analysis parameters
    * @returns {Object} Integrated risk assessment
    */
-  static async getLocationRiskAssessment(params) {
+  async getLocationRiskAssessment(params) {
     const {
       latitude,
       longitude,
