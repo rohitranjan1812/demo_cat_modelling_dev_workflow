@@ -379,6 +379,9 @@ class CATSimulationEngine {
 
   /**
    * Generate vulnerability impact for an event
+   * Implements proper Loss = Hazard × Vulnerability × Exposure formula
+   * Task 1.4 from ACTION_PLAN
+   * 
    * @param {string} hazardType - Type of hazard
    * @param {Array} geographicImpact - Geographic impact array
    * @param {Object} config - Simulation configuration
@@ -388,27 +391,207 @@ class CATSimulationEngine {
     const impacts = [];
     
     for (const geoImpact of geographicImpact) {
+      // Get vulnerabilities for this location
       const vulnerabilities = await this.getVulnerabilitiesForLocation(
         geoImpact.affectedLatitude, 
         geoImpact.affectedLongitude, 
         config
       );
       
+      // Get exposures for this location
+      const exposures = await this.getExposuresForLocation(
+        geoImpact.affectedLatitude, 
+        geoImpact.affectedLongitude, 
+        config
+      );
+      
+      // Calculate impact for each vulnerability-exposure combination
       for (const vuln of vulnerabilities) {
-        const vulnerabilityScore = vuln.overallVulnerabilityScore;
-        const vulnerabilityMultiplier = this.calculateVulnerabilityMultiplier(vulnerabilityScore);
-        const adjustedLoss = geoImpact.intensityAtLocation * vulnerabilityMultiplier;
+        // Get hazard-specific vulnerability score
+        const vulnScore = this.getVulnerabilityScoreForHazard(vuln, hazardType);
+        const normalizedVulnScore = vulnScore / 10; // Normalize to 0-1
         
-        impacts.push({
-          vulnerabilityId: vuln.vulnerabilityId,
-          vulnerabilityScore,
-          vulnerabilityMultiplier,
-          adjustedLoss
-        });
+        // Calculate impacts for each exposure
+        for (const exposure of exposures) {
+          const hazardIntensity = geoImpact.intensityAtLocation;
+          
+          // Apply Loss = Hazard × Vulnerability × Exposure formula
+          const damageRatio = this.calculateDamageRatio(hazardType, hazardIntensity, normalizedVulnScore);
+          const grossLoss = exposure.totalInsuredValue * damageRatio;
+          
+          // Apply policy terms (deductibles, limits)
+          const netLoss = this.applyPolicyTerms(grossLoss, exposure);
+          
+          impacts.push({
+            vulnerabilityId: vuln.vulnerabilityId,
+            exposureId: exposure.exposureId,
+            accountId: exposure.accountId,
+            vulnerabilityScore: vulnScore,
+            normalizedVulnerabilityScore: normalizedVulnScore,
+            hazardIntensity,
+            damageRatio,
+            exposureValue: exposure.totalInsuredValue,
+            grossLoss,
+            netLoss,
+            deductible: exposure.policyTerms?.deductible || 0,
+            limit: exposure.policyTerms?.limit || exposure.totalInsuredValue
+          });
+        }
       }
     }
     
     return impacts;
+  }
+
+  /**
+   * Get vulnerability score for a specific hazard type
+   * @param {Object} vulnerability - Vulnerability object
+   * @param {string} hazardType - Hazard type
+   * @returns {number} Vulnerability score (0-10)
+   */
+  getVulnerabilityScoreForHazard(vulnerability, hazardType) {
+    // Check if vulnerability has hazard-specific scores
+    if (vulnerability.hazardTypeScores) {
+      const hazardScore = vulnerability.hazardTypeScores.find(
+        score => score.hazardType === hazardType
+      );
+      if (hazardScore) {
+        return hazardScore.vulnerabilityScore || vulnerability.overallVulnerabilityScore;
+      }
+    }
+    
+    // Fall back to overall vulnerability score
+    return vulnerability.overallVulnerabilityScore || 5;
+  }
+
+  /**
+   * Calculate damage ratio based on hazard intensity and vulnerability
+   * Implements peril-specific damage functions (actuarial approach)
+   * Task 1.4 from ACTION_PLAN
+   * 
+   * @param {string} hazardType - Type of hazard
+   * @param {number} intensity - Hazard intensity
+   * @param {number} vulnerabilityFactor - Normalized vulnerability factor (0-1)
+   * @returns {number} Damage ratio (0-1)
+   */
+  calculateDamageRatio(hazardType, intensity, vulnerabilityFactor) {
+    // Define peril-specific damage functions based on industry standards
+    const damageFunctions = {
+      'Earthquake': (int, vuln) => {
+        // Modified Mercalli Intensity scale-based damage
+        // Low intensity (<5): Minimal damage
+        // Medium intensity (5-7): Moderate to high damage
+        // High intensity (>7): Severe to catastrophic damage
+        if (int < 5) return 0.05 * vuln;
+        if (int < 6) return 0.15 * vuln;
+        if (int < 7) return 0.40 * vuln;
+        if (int < 8) return 0.70 * vuln;
+        return 0.95 * vuln;
+      },
+      
+      'Hurricane': (int, vuln) => {
+        // Saffir-Simpson scale-based damage (Category 1-5)
+        // Assumes int represents category (1-5)
+        const baseDamage = Math.min(int / 5, 1);
+        const curveAdjustment = Math.pow(baseDamage, 1.5); // Non-linear damage curve
+        return curveAdjustment * vuln;
+      },
+      
+      'Typhoon': (int, vuln) => {
+        // Similar to hurricane
+        const baseDamage = Math.min(int / 5, 1);
+        const curveAdjustment = Math.pow(baseDamage, 1.5);
+        return curveAdjustment * vuln;
+      },
+      
+      'Flood': (int, vuln) => {
+        // Water depth-based damage (int = depth in meters)
+        // 0-1m: 20%, 1-2m: 40%, 2-3m: 60%, 3-4m: 80%, 4m+: 95%
+        if (int < 1) return 0.20 * vuln;
+        if (int < 2) return 0.40 * vuln;
+        if (int < 3) return 0.60 * vuln;
+        if (int < 4) return 0.80 * vuln;
+        return 0.95 * vuln;
+      },
+      
+      'Wildfire': (int, vuln) => {
+        // Fire intensity-based (int = fire line intensity kW/m)
+        // Normalized to 0-10 scale
+        const normalized = Math.min(int / 10, 1);
+        return Math.pow(normalized, 1.2) * vuln * 0.95; // Very high damage potential
+      },
+      
+      'Tornado': (int, vuln) => {
+        // Enhanced Fujita scale (EF0-EF5)
+        if (int < 1) return 0.10 * vuln;
+        if (int < 2) return 0.30 * vuln;
+        if (int < 3) return 0.60 * vuln;
+        if (int < 4) return 0.85 * vuln;
+        return 0.98 * vuln;
+      },
+      
+      'Hail': (int, vuln) => {
+        // Hail size-based (int = diameter in cm)
+        if (int < 2) return 0.05 * vuln;
+        if (int < 4) return 0.15 * vuln;
+        if (int < 6) return 0.30 * vuln;
+        if (int < 8) return 0.50 * vuln;
+        return 0.70 * vuln;
+      },
+      
+      'Wind': (int, vuln) => {
+        // Wind speed-based (int = wind speed in m/s)
+        // Normalized to damage ratio
+        const normalized = Math.min(int / 50, 1); // 50 m/s = ~112 mph
+        return Math.pow(normalized, 1.3) * vuln * 0.8;
+      },
+      
+      'Storm Surge': (int, vuln) => {
+        // Similar to flood but potentially more severe
+        if (int < 1) return 0.25 * vuln;
+        if (int < 2) return 0.45 * vuln;
+        if (int < 3) return 0.65 * vuln;
+        if (int < 4) return 0.85 * vuln;
+        return 0.98 * vuln;
+      }
+    };
+    
+    // Get damage function for this hazard type, or use default
+    const damageFunc = damageFunctions[hazardType] || ((int, vuln) => {
+      // Default: linear interpolation with cap at 80%
+      return Math.min(int / 10, 0.8) * vuln;
+    });
+    
+    // Calculate and cap at 100%
+    const damageRatio = damageFunc(intensity, vulnerabilityFactor);
+    return Math.min(Math.max(damageRatio, 0), 1.0);
+  }
+
+  /**
+   * Apply policy terms to calculate net loss
+   * @param {number} grossLoss - Gross loss amount
+   * @param {Object} exposure - Exposure object with policy terms
+   * @returns {number} Net loss after deductibles and limits
+   */
+  applyPolicyTerms(grossLoss, exposure) {
+    if (!exposure.policyTerms) {
+      return grossLoss;
+    }
+    
+    const { deductible = 0, limit, coinsurance = 100 } = exposure.policyTerms;
+    
+    // Apply deductible
+    let netLoss = Math.max(0, grossLoss - deductible);
+    
+    // Apply coinsurance
+    netLoss = netLoss * (coinsurance / 100);
+    
+    // Apply policy limit
+    if (limit) {
+      netLoss = Math.min(netLoss, limit);
+    }
+    
+    return netLoss;
   }
 
   /**
@@ -994,10 +1177,11 @@ class CATSimulationEngine {
               return false;
             }
             return true;
-        });
+          });
+        }
+        
+        return accounts;
       }
-      
-      return accounts;
     } catch (error) {
       console.error('Error querying accounts for location:', error);
       return []; // Return empty array on error to prevent simulation failure
