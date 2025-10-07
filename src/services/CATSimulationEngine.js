@@ -893,30 +893,51 @@ class CATSimulationEngine {
 
   async getVulnerabilitiesForLocation(lat, lng, config) {
     try {
-      // Find vulnerabilities within a reasonable distance (50km radius by default)
-      const radius = config.vulnerabilityRadius || 50; // km
-      
-      const vulnerabilities = await Vulnerability.find({ 
-        status: 'Active',
-        'geographicScope.centerLatitude': {
-          $gte: lat - (radius / 111.32), // Approximate degrees conversion
-          $lte: lat + (radius / 111.32)
-        },
-        'geographicScope.centerLongitude': {
-          $gte: lng - (radius / (111.32 * Math.cos(lat * Math.PI / 180))),
-          $lte: lng + (radius / (111.32 * Math.cos(lat * Math.PI / 180)))
-        }
-      }).limit(10); // Limit to prevent performance issues
-
-      return vulnerabilities.filter(vuln => {
-        // Calculate actual distance and check if within radius
-        const distance = this.calculateDistance(
-          lat, lng,
-          vuln.geographicScope.centerLatitude,
-          vuln.geographicScope.centerLongitude
+      // Use IntegrationService if available, otherwise fall back to direct query
+      if (this.integrationService) {
+        const radius = config.vulnerabilityRadius || 50; // km
+        const vulnerabilities = await this.integrationService.getVulnerabilitiesAffectingLocation(
+          lat, 
+          lng, 
+          radius
         );
-        return distance <= radius;
-      });
+        
+        // Filter by hazard types if specified
+        if (config.hazardTypes && config.hazardTypes.length > 0) {
+          return vulnerabilities.filter(vuln => 
+            config.hazardTypes.some(ht => 
+              vuln.hazardTypesCovered && vuln.hazardTypesCovered.includes(ht)
+            )
+          );
+        }
+        
+        return vulnerabilities;
+      } else {
+        // Fallback to direct query
+        const radius = config.vulnerabilityRadius || 50; // km
+        
+        const vulnerabilities = await Vulnerability.find({ 
+          status: 'Active',
+          'geographicScope.centerLatitude': {
+            $gte: lat - (radius / 111.32), // Approximate degrees conversion
+            $lte: lat + (radius / 111.32)
+          },
+          'geographicScope.centerLongitude': {
+            $gte: lng - (radius / (111.32 * Math.cos(lat * Math.PI / 180))),
+            $lte: lng + (radius / (111.32 * Math.cos(lat * Math.PI / 180)))
+          }
+        }).limit(10); // Limit to prevent performance issues
+
+        return vulnerabilities.filter(vuln => {
+          // Calculate actual distance and check if within radius
+          const distance = this.calculateDistance(
+            lat, lng,
+            vuln.geographicScope.centerLatitude,
+            vuln.geographicScope.centerLongitude
+          );
+          return distance <= radius;
+        });
+      }
     } catch (error) {
       console.error('Error querying vulnerabilities for location:', error);
       return []; // Return empty array on error to prevent simulation failure
@@ -948,32 +969,87 @@ class CATSimulationEngine {
 
   async getAccountsForLocation(lat, lng, config) {
     try {
-      // Find accounts within the specified regions or globally
-      const query = { status: 'Active' };
-      
-      // If geographic scope is specified, filter by regions
-      if (config.geographicScope?.regions) {
-        query.regions = { $in: config.geographicScope.regions };
-      }
-      
-      const accounts = await Account.find(query).limit(20); // Limit for performance
-      
-      // Filter accounts based on exposure scope if specified
-      if (config.exposureScope) {
-        return accounts.filter(account => {
-          if (config.exposureScope.minExposure && account.totalExposure < config.exposureScope.minExposure) {
-            return false;
-          }
-          if (config.exposureScope.maxExposure && account.totalExposure > config.exposureScope.maxExposure) {
-            return false;
-          }
-          return true;
+      // Use IntegrationService if available, otherwise fall back to direct query
+      if (this.integrationService) {
+        const radius = config.searchRadius || 50; // km
+        return await this.integrationService.getAccountsInLocation(lat, lng, radius);
+      } else {
+        // Fallback to direct query
+        const query = { status: 'Active' };
+        
+        // If geographic scope is specified, filter by regions
+        if (config.geographicScope?.regions) {
+          query.regions = { $in: config.geographicScope.regions };
+        }
+        
+        const accounts = await Account.find(query).limit(20); // Limit for performance
+        
+        // Filter accounts based on exposure scope if specified
+        if (config.exposureScope) {
+          return accounts.filter(account => {
+            if (config.exposureScope.minExposure && account.totalExposure < config.exposureScope.minExposure) {
+              return false;
+            }
+            if (config.exposureScope.maxExposure && account.totalExposure > config.exposureScope.maxExposure) {
+              return false;
+            }
+            return true;
         });
       }
       
       return accounts;
     } catch (error) {
       console.error('Error querying accounts for location:', error);
+      return []; // Return empty array on error to prevent simulation failure
+    }
+  }
+
+  /**
+   * Get exposures for a specific location
+   * Implements Task 1.3 from ACTION_PLAN - uses ExposureService
+   * 
+   * @param {number} lat - Latitude
+   * @param {number} lng - Longitude
+   * @param {Object} config - Configuration object
+   * @returns {Promise<Array>} Array of exposures near the location
+   */
+  async getExposuresForLocation(lat, lng, config) {
+    try {
+      // Try to use ExposureService if available
+      const ExposureService = require('./ExposureService');
+      const exposureService = new ExposureService();
+      
+      const radius = config.searchRadius || 50; // km
+      const options = {
+        status: 'Active',
+        minValue: config.exposureScope?.minExposure || 0
+      };
+      
+      const exposures = await exposureService.getExposuresNearLocation(lat, lng, radius, options);
+      
+      // Apply additional filters from config
+      if (config.exposureScope) {
+        return exposures.filter(exposure => {
+          if (config.exposureScope.maxExposure && exposure.totalInsuredValue > config.exposureScope.maxExposure) {
+            return false;
+          }
+          // Filter by occupancy type if specified
+          if (config.exposureScope.occupancyTypes && 
+              !config.exposureScope.occupancyTypes.includes(exposure.occupancyType)) {
+            return false;
+          }
+          // Filter by construction type if specified
+          if (config.exposureScope.constructionTypes && 
+              !config.exposureScope.constructionTypes.includes(exposure.constructionType)) {
+            return false;
+          }
+          return true;
+        });
+      }
+      
+      return exposures;
+    } catch (error) {
+      console.error('Error querying exposures for location:', error);
       return []; // Return empty array on error to prevent simulation failure
     }
   }
