@@ -1,8 +1,3 @@
-/**
- * Simulation Service for CAT Modeling Platform
- * Handles all simulation-related business logic and database operations
- */
-
 const BaseService = require('./BaseService');
 const SimulationRun = require('../models/SimulationRun');
 const SimulationEvent = require('../models/SimulationEvent');
@@ -11,12 +6,17 @@ const Vulnerability = require('../models/Vulnerability');
 const Account = require('../models/Account');
 const CATSimulationEngine = require('./CATSimulationEngine');
 const FinancialCalculationService = require('./FinancialCalculationService');
+const IntegrationService = require('./IntegrationService');
 
 class SimulationService extends BaseService {
   constructor() {
     super(SimulationRun);
-    this.simulationEngine = new CATSimulationEngine();
-    this.financialCalculator = new FinancialCalculationService();
+    // Inject services into simulation engine per Task 1.2 of ACTION_PLAN
+    // IntegrationService uses static methods, so pass the class itself
+    const financialService = new FinancialCalculationService();
+    this.simulationEngine = new CATSimulationEngine(IntegrationService, financialService);
+    this.financialCalculator = financialService;
+    this.integrationService = IntegrationService;
   }
 
   /**
