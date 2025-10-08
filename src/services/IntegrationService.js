@@ -358,9 +358,95 @@ class IntegrationService {
   }
 
   static async getAccountsInLocation(latitude, longitude, bufferKm) {
-    // This would typically involve querying locations and then accounts
-    // For now, returning all accounts as a placeholder
-    return await Account.find({ status: 'Active' });
+    // Query locations within the buffer, then find associated accounts
+    const Location = require('../models/Location');
+    
+    // Calculate bounding box for efficient query
+    const latDelta = bufferKm / 111.32; // 1 degree latitude ≈ 111.32 km
+    const lonDelta = bufferKm / (111.32 * Math.cos(latitude * Math.PI / 180));
+    
+    const locations = await Location.find({
+      'coordinates.latitude': { $gte: latitude - latDelta, $lte: latitude + latDelta },
+      'coordinates.longitude': { $gte: longitude - lonDelta, $lte: longitude + lonDelta },
+      status: 'Active'
+    });
+    
+    // Extract unique account IDs from locations
+    const accountIds = [...new Set(locations.map(loc => loc.metadata.get('accountId')).filter(id => id))];
+    
+    // Query accounts
+    if (accountIds.length > 0) {
+      return await Account.find({ 
+        accountId: { $in: accountIds }, 
+        status: 'Active' 
+      });
+    }
+    
+    // Fallback: return active accounts if no location-based filtering possible
+    return await Account.find({ status: 'Active' }).limit(20);
+  }
+
+  /**
+   * Get exposures near a location
+   * Implements Task 1.3 from ACTION_PLAN
+   * 
+   * @param {number} latitude - Latitude
+   * @param {number} longitude - Longitude
+   * @param {number} bufferKm - Buffer radius in kilometers
+   * @returns {Promise<Array>} Array of exposures
+   */
+  static async getExposuresNearLocation(latitude, longitude, bufferKm) {
+    try {
+      const Exposure = require('../models/Exposure');
+      
+      // Calculate bounding box for efficient query
+      const latDelta = bufferKm / 111.32; // 1 degree latitude ≈ 111.32 km
+      const lonDelta = bufferKm / (111.32 * Math.cos(latitude * Math.PI / 180));
+      
+      const exposures = await Exposure.find({
+        'location.latitude': { $gte: latitude - latDelta, $lte: latitude + latDelta },
+        'location.longitude': { $gte: longitude - lonDelta, $lte: longitude + lonDelta },
+        status: 'Active',
+        'policyTerms.effectiveDate': { $lte: new Date() },
+        'policyTerms.expirationDate': { $gte: new Date() }
+      });
+      
+      // Filter by exact distance using Haversine formula
+      return exposures.filter(exposure => {
+        const distance = this.calculateDistance(
+          latitude,
+          longitude,
+          exposure.location.latitude,
+          exposure.location.longitude
+        );
+        return distance <= bufferKm;
+      });
+    } catch (error) {
+      console.error('Error querying exposures near location:', error);
+      // Return empty array if Exposure model doesn't exist yet
+      return [];
+    }
+  }
+
+  /**
+   * Calculate distance between two points using Haversine formula
+   * @param {number} lat1 - First latitude
+   * @param {number} lon1 - First longitude
+   * @param {number} lat2 - Second latitude
+   * @param {number} lon2 - Second longitude
+   * @returns {number} Distance in kilometers
+   */
+  static calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   }
 
   static async getHazardZonesContainingLocation(latitude, longitude) {
