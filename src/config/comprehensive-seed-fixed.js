@@ -574,12 +574,17 @@ async function connectDatabase() {
     console.log('✅ Connected to MongoDB successfully');
   } catch (error) {
     console.error('❌ MongoDB connection failed:', error.message);
+    console.error('\n💡 Troubleshooting:');
+    console.error('   1. Ensure MongoDB is running on your system');
+    console.error('   2. Check your .env file has correct MONGODB_URI');
+    console.error('   3. Verify MongoDB is listening on port 27017');
+    console.error('   4. Run: npm run verify:db for detailed diagnostics\n');
     throw error;
   }
 }
 
 async function clearDatabase() {
-  console.log('🧹 Clearing existing data...');
+  console.log('🧹 Checking existing data...');
   
   const collections = [
     Account,
@@ -588,6 +593,30 @@ async function clearDatabase() {
     SimulationRun
   ];
   
+  let hasData = false;
+  const counts = {};
+  
+  for (const Collection of collections) {
+    const count = await Collection.countDocuments();
+    counts[Collection.collection.name] = count;
+    if (count > 0) {
+      hasData = true;
+    }
+  }
+  
+  if (hasData) {
+    console.log('⚠️  Found existing data:');
+    for (const [name, count] of Object.entries(counts)) {
+      if (count > 0) {
+        console.log(`   • ${name}: ${count} documents`);
+      }
+    }
+    console.log('\n⚠️  This will DELETE all existing data and replace it with seed data!');
+    console.log('   Proceeding in 3 seconds... (Press Ctrl+C to cancel)');
+    await new Promise(resolve => setTimeout(resolve, 3000));
+  }
+  
+  console.log('🗑️  Clearing collections...');
   for (const Collection of collections) {
     await Collection.deleteMany({});
     console.log(`   ✓ Cleared ${Collection.collection.name}`);
@@ -722,7 +751,16 @@ async function seedDatabase() {
     
   } catch (error) {
     console.error('❌ Seeding failed:', error.message);
-    console.error('Stack trace:', error.stack);
+    
+    if (error.name === 'MongoServerSelectionError' || error.message.includes('ECONNREFUSED')) {
+      console.error('\n⚠️  Cannot connect to MongoDB!');
+      console.error('Please ensure MongoDB is running and try again.');
+      console.error('Run: npm run verify:db for help\n');
+    } else {
+      console.error('Stack trace:', error.stack);
+    }
+    
+    process.exit(1);
   } finally {
     try {
       await mongoose.disconnect();

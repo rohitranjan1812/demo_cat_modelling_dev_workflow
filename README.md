@@ -74,14 +74,35 @@ A scalable and flexible MongoDB-based exposure data model for cat modeling simul
    mongod
    ```
 
-5. **Start the application**
+5. **Verify Database and Seed Data**
    ```bash
-   # Development mode
-   npm run dev
+   # Quick setup (recommended) - auto-checks and seeds if needed
+   npm run setup:db
    
-   # Production mode
-   npm start
+   # Or manually check and seed:
+   npm run verify:db     # Check if MongoDB is running and has data
+   npm run seed:fixed    # If database is empty, seed with sample data
    ```
+
+6. **Start the application**
+   ```bash
+   # Start backend
+   npm run start:backend
+   
+   # Start frontend (in a new terminal)
+   npm run start:frontend
+   ```
+
+### Database Setup & Troubleshooting
+
+**If simulations fail or database is empty**, see the comprehensive guide:
+📖 **[DATABASE_SETUP_GUIDE.md](./DATABASE_SETUP_GUIDE.md)**
+
+Quick commands:
+- `npm run setup:db` - **One-command setup** (auto-verify and seed)
+- `npm run verify:db` - Check database status and contents
+- `npm run seed:fixed` - Manually populate database with sample data
+- View the setup guide for detailed troubleshooting steps
 
 ### Environment Variables
 

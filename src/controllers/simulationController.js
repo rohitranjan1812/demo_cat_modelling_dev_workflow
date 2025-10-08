@@ -73,10 +73,34 @@ class SimulationController {
       });
     } catch (error) {
       console.error('Error starting simulation:', error);
-      res.status(500).json({
+      
+      // Provide helpful error messages for common issues
+      let message = 'Failed to start simulation';
+      let statusCode = 500;
+      
+      if (error.message.includes('No hazard types available') || 
+          error.message.includes('No hazards found')) {
+        message = 'Cannot start simulation: No hazard data found in database. Please run "npm run setup:db" to seed the database.';
+        statusCode = 400;
+      } else if (error.message.includes('No vulnerabilities') || 
+                 error.message.includes('vulnerability data')) {
+        message = 'Cannot start simulation: No vulnerability data found in database. Please run "npm run setup:db" to seed the database.';
+        statusCode = 400;
+      } else if (error.message.includes('No accounts') || 
+                 error.message.includes('account data')) {
+        message = 'Cannot start simulation: No account data found in database. Please run "npm run setup:db" to seed the database.';
+        statusCode = 400;
+      } else if (error.name === 'MongoServerSelectionError' || 
+                 error.message.includes('ECONNREFUSED')) {
+        message = 'Cannot start simulation: MongoDB is not running or not accessible. Please ensure MongoDB is running on port 27017.';
+        statusCode = 503;
+      }
+      
+      res.status(statusCode).json({
         success: false,
-        message: 'Failed to start simulation',
-        error: error.message
+        message: message,
+        error: error.message,
+        hint: statusCode === 400 ? 'Run "npm run verify:db" to check database status' : undefined
       });
     }
   }
