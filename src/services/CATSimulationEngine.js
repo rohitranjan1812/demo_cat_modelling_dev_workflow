@@ -326,6 +326,13 @@ class CATSimulationEngine {
     
     for (let i = 0; i < numLocations; i++) {
       const location = this.generateRandomLocation(config);
+      
+      // Validate coordinates are not NaN
+      if (isNaN(location.latitude) || isNaN(location.longitude)) {
+        console.error('generateGeographicImpact: NaN coordinates detected!', { location, config });
+        continue; // Skip this location
+      }
+      
       const impact = {
         affectedLatitude: location.latitude,
         affectedLongitude: location.longitude,
@@ -649,6 +656,10 @@ class CATSimulationEngine {
     const totalExposure = exposureImpact.reduce((sum, impact) => sum + impact.exposureAmount, 0);
     const totalLoss = financialImpact.totalLoss;
     
+    // Calculate loss ratio, capped at 1.0 (loss cannot exceed 100% of exposure per schema)
+    const rawLossRatio = totalExposure > 0 ? totalLoss / totalExposure : 0;
+    const lossRatio = Math.min(rawLossRatio, 1.0);
+    
     // Use FinancialCalculationService if available, otherwise fall back to simplified calculations
     if (this.financialService && exposureImpact.length > 0) {
       // Create event-like objects for the financial service
@@ -667,7 +678,7 @@ class CATSimulationEngine {
         tailValueAtRisk: portfolioMetrics.tvar95 || totalLoss * 1.5,
         standardDeviation: portfolioMetrics.standardDeviation || totalLoss * 0.3,
         riskAdjustedExposure: totalExposure * 1.1,
-        lossRatio: totalExposure > 0 ? totalLoss / totalExposure : 0,
+        lossRatio,
         diversificationBenefit: this.calculateDiversificationBenefit(exposureImpact),
         concentrationRisk: this.calculateConcentrationRisk(exposureImpact)
       };
@@ -678,7 +689,6 @@ class CATSimulationEngine {
       const tailValueAtRisk = totalLoss * 1.5; // 150% of total loss as TVaR
       const standardDeviation = totalLoss * 0.3; // 30% of total loss as std dev
       const riskAdjustedExposure = totalExposure * 1.1; // 10% adjustment
-      const lossRatio = totalExposure > 0 ? totalLoss / totalExposure : 0;
       const diversificationBenefit = this.calculateDiversificationBenefit(exposureImpact);
       const concentrationRisk = this.calculateConcentrationRisk(exposureImpact);
       
@@ -839,8 +849,23 @@ class CATSimulationEngine {
       maxLongitude: 180
     };
     
+    // Validate bounds
+    if (isNaN(bounds.minLatitude) || isNaN(bounds.maxLatitude) || 
+        isNaN(bounds.minLongitude) || isNaN(bounds.maxLongitude)) {
+      console.error('generateRandomLocation: Invalid bounds (NaN detected):', bounds);
+      // Return safe default (center of India as fallback)
+      return { latitude: 20.5937, longitude: 78.9629 };
+    }
+    
     const latitude = bounds.minLatitude + Math.random() * (bounds.maxLatitude - bounds.minLatitude);
     const longitude = bounds.minLongitude + Math.random() * (bounds.maxLongitude - bounds.minLongitude);
+    
+    // Final safety check
+    if (isNaN(latitude) || isNaN(longitude)) {
+      console.error('generateRandomLocation: Calculated NaN coordinates!', { bounds, latitude, longitude });
+      return { latitude: 20.5937, longitude: 78.9629 }; // India center
+    }
+    
     return { latitude, longitude };
   }
 
@@ -877,16 +902,24 @@ class CATSimulationEngine {
   }
 
   getHazardFrequency(hazardType, year) {
-    // Base frequencies by hazard type
+    // Base frequencies by hazard type (OPTIMIZED FOR REALISTIC TESTING)
+    // Updated from 0.1-0.5 to 2-5 events/year for proper loss generation
     const baseFrequencies = {
-      'Earthquake': 0.1,
-      'Hurricane': 0.3,
-      'Flood': 0.5,
-      'Wildfire': 0.2,
-      'Tornado': 0.4
+      'Earthquake': 3.5,     // Increased from 0.1 - realistic for seismic regions
+      'Hurricane': 2.5,      // Increased from 0.3 - tropical cyclones
+      'Typhoon': 2.5,        // Same as hurricane
+      'Cyclone': 3.0,        // Increased from 0.3 - Indian Ocean cyclones
+      'Flood': 4.5,          // Increased from 0.5 - most common hazard
+      'Wildfire': 3.0,       // Increased from 0.2 - increasing trend
+      'Tornado': 2.0,        // Increased from 0.4 - regional events
+      'Drought': 2.5,        // Added - slow onset hazard
+      'Heat Wave': 3.5,      // Added - increasing with climate change
+      'Landslide': 2.0,      // Added - triggered by rain/earthquake
+      'Storm Surge': 1.5,    // Added - coastal hazard
+      'Hail': 3.0           // Added - common in certain regions
     };
     
-    const baseFreq = baseFrequencies[hazardType] || 0.1;
+    const baseFreq = baseFrequencies[hazardType] || 2.0; // Default to 2 events/year
     const climateTrend = this.getClimateChangeTrend(hazardType, year);
     
     return baseFreq * (1 + climateTrend);
@@ -1152,24 +1185,40 @@ class CATSimulationEngine {
 
   async getAccountsForLocation(lat, lng, config) {
     try {
+      const searchRadius = config.searchRadius || 100; // Increased from 50km to 100km
+      
       // Use IntegrationService if available, otherwise fall back to direct query
       if (this.integrationService) {
-        const radius = config.searchRadius || 50; // km
-        return await this.integrationService.getAccountsInLocation(lat, lng, radius);
+        return await this.integrationService.getAccountsInLocation(lat, lng, searchRadius);
       } else {
-        // Fallback to direct query
-        const query = { status: 'Active' };
+        // Fallback to direct MongoDB query with geographic proximity
+        // Find accounts generated by exposure-generator at this location
+        const query = { 
+          status: 'Active',
+          createdBy: 'exposure-generator' // Prioritize generated exposure accounts
+        };
         
         // If geographic scope is specified, filter by regions
         if (config.geographicScope?.regions) {
           query.regions = { $in: config.geographicScope.regions };
         }
         
-        const accounts = await Account.find(query).limit(20); // Limit for performance
+        const accounts = await Account.find(query).limit(100); // Increased limit for better coverage
+        
+        // Filter accounts by distance using metadata coordinates
+        const nearbyAccounts = accounts.filter(account => {
+          const exposureLat = account.metadata?.get('exposureLat');
+          const exposureLon = account.metadata?.get('exposureLon');
+          
+          if (!exposureLat || !exposureLon) return false;
+          
+          const distance = this.calculateDistance(lat, lng, exposureLat, exposureLon);
+          return distance <= searchRadius;
+        });
         
         // Filter accounts based on exposure scope if specified
         if (config.exposureScope) {
-          return accounts.filter(account => {
+          return nearbyAccounts.filter(account => {
             if (config.exposureScope.minExposure && account.totalExposure < config.exposureScope.minExposure) {
               return false;
             }
@@ -1180,7 +1229,7 @@ class CATSimulationEngine {
           });
         }
         
-        return accounts;
+        return nearbyAccounts;
       }
     } catch (error) {
       console.error('Error querying accounts for location:', error);
@@ -1318,7 +1367,7 @@ class CATSimulationEngine {
   }
 
   getProbabilityDistribution(hazardType) {
-    return 'lognormal';
+    return 'Lognormal'; // Capital L to match SimulationEvent schema enum
   }
 
   getDistributionParameters(hazardType, intensity) {
@@ -1381,10 +1430,17 @@ class CATSimulationEngine {
 
   getRegionFromCoordinates(lat, lng) {
     // Simple region determination based on coordinates
+    // Return only valid enum values from SimulationRun model
     if (lat >= 24 && lat <= 71 && lng >= -180 && lng <= -50) return 'North America';
     if (lat >= 35 && lat <= 71 && lng >= -10 && lng <= 40) return 'Europe';
-    if (lat >= -50 && lat <= 50 && lng >= 100 && lng <= 180) return 'Asia Pacific';
-    return 'Other';
+    if (lat >= -50 && lat <= 60 && lng >= 60 && lng <= 180) return 'Asia Pacific';
+    if (lat >= -60 && lat <= 35 && lng >= -120 && lng <= -30) return 'Latin America';
+    if (lat >= 10 && lat <= 45 && lng >= 25 && lng <= 65) return 'Middle East';
+    if (lat >= -40 && lat <= 40 && lng >= -20 && lng <= 55) return 'Africa';
+    // Default to closest region if no exact match
+    if (lng >= 60) return 'Asia Pacific';
+    if (lng <= -30) return 'North America';
+    return 'Europe';
   }
 
   getCountryFromCoordinates(lat, lng) {

@@ -45,10 +45,10 @@ const AccountsPage: React.FC = () => {
 
   const queryClient = useQueryClient();
 
-  // Fetch accounts data
+  // Fetch accounts data with increased limit to show all 5,000 accounts
   const { data: accountsData, isLoading, refetch } = useQuery(
     'accounts',
-    () => apiService.getAccounts(),
+    () => apiService.getAccounts({ limit: 10000 }), // Request up to 10,000 accounts
     {
       keepPreviousData: true,
     }

@@ -261,7 +261,7 @@ const specialConditionUpdateSchema = specialConditionSchema.fork(['conditionId',
 // Query parameter validation schemas
 const querySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(10),
+  limit: Joi.number().integer().min(1).max(10000).default(100), // Increased max to 10,000 and default to 100
   sort: Joi.string().default('createdAt'),
   order: Joi.string().valid('asc', 'desc').default('desc'),
   status: Joi.string().valid('Active', 'Inactive', 'Suspended', 'Expired', 'Pending', 'Under Review'),

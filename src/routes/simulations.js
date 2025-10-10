@@ -69,6 +69,7 @@ const startSimulationValidation = [
     .withMessage('Invalid currency'),
   
   body('modelingConfig.numberOfSimulations')
+    .optional()
     .isInt({ min: 1, max: 1000000 })
     .withMessage('Number of simulations must be between 1 and 1,000,000'),
   
