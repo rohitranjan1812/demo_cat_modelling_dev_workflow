@@ -1,319 +1,109 @@
-const CATSimulationEngine = require('../../src/services/CATSimulationEngine');const CATSimulationEngine = require('../../src/services/CATSimulationEngine');const CATSimulationEngine = require('../../src/services/CATSimulationEngine');
-
+const CATSimulationEngine = require('../../src/services/CATSimulationEngine');
 const SimulationRun = require('../../src/models/SimulationRun');
-
-const SimulationEvent = require('../../src/models/SimulationEvent');const SimulationRun = require('../../src/models/SimulationRun');const SimulationRun = require('../../src/models/SimulationRun');
-
+const SimulationEvent = require('../../src/models/SimulationEvent');
 const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');
 
-const { setupTestDatabase, cleanupTestDatabase, createTestData } = require('../test-utils');const SimulationEvent = require('../../src/models/SimulationEvent');const SimulationEvent = require('../../src/models/SimulationEvent');
-
-
-
-describe('CATSimulationEngine - Core Tests', () => {const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');
+describe('CATSimulationEngine - Phase 3 Core Tests', () => {
 
   let engine;
 
-const { setupTestDatabase, cleanupTestDatabase, createTestData } = require('../test-utils');
-
-  beforeAll(async () => {
-
-    await setupTestDatabase();describe('CATSimulationEngine - Phase 3 Core Tests', () => {
-
-  });
-
-describe('CATSimulationEngine - Core Tests', () => {
-
-  afterAll(async () => {
-
-    await cleanupTestDatabase();  let engine;  let engine;
-
-  });
-
-
+const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');
 
   beforeEach(() => {
 
-    engine = new CATSimulationEngine();  beforeAll(async () => {const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');
+    engine = new CATSimulationEngine();const SimulationEvent = require('../../src/models/SimulationEvent');const SimulationRun = require('../../src/models/SimulationRun');const SimulationRun = require('../../src/models/SimulationRun');
 
   });
 
-    await setupTestDatabase();
+// Import test utilities
 
   describe('Initialization', () => {
 
-    test('should initialize with default configuration', () => {  });  beforeEach(() => {
+    test('should initialize with default configuration', () => {const { setupTestDatabase, cleanupTestDatabase, createTestData } = require('../test-utils');const Hazard = require('../../src/models/Hazard');
 
-      expect(engine).toBeDefined();
+      expect(engine.integrationService).toBeNull();
+
+      expect(engine.financialService).toBeNull();
 
       expect(engine.probService).toBeInstanceOf(ProbabilityDistributionService);
 
-      expect(engine.runningSimulations).toBeInstanceOf(Map);
+      expect(engine.runningSimulations).toBeInstanceOf(Map);describe('CATSimulationEngine - Phase 3 Service Testing', () => {const Account = require('../../src/models/Account');const SimulationEvent = require('../../src/models/SimulationEvent');const SimulationEvent = require('../../src/models/SimulationEvent');
 
-    });  afterAll(async () => {    engine = new CATSimulationEngine();const SimulationEvent = require('../../src/models/SimulationEvent');const SimulationRun = require('../../src/models/SimulationRun');const SimulationRun = require('../../src/models/SimulationRun');
+    });
 
+  let engine;
 
+    test('should initialize with injected services', () => {
 
-    test('should initialize with injected services', () => {    await cleanupTestDatabase();
+      const mockIntegration = { test: 'integration' };  let testData;const Vulnerability = require('../../src/models/Vulnerability');
 
-      const mockIntegration = { test: 'integration' };
-
-      const mockFinancial = { test: 'financial' };  });  });
+      const mockFinancial = { test: 'financial' };
 
       
 
       const engineWithServices = new CATSimulationEngine(mockIntegration, mockFinancial);
 
+        beforeAll(async () => {const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');const Hazard = require('../../src/models/Hazard');const Hazard = require('../../src/models/Hazard');
 
+      expect(engineWithServices.integrationService).toBe(mockIntegration);
 
-      expect(engineWithServices.integrationService).toBe(mockIntegration);  beforeEach(() => {// Import test utilities
-
-      expect(engineWithServices.financialService).toBe(mockFinancial);
-
-    });    engine = new CATSimulationEngine();
-
-  });
-
-  });  describe('Initialization', () => {
-
-  describe('Core Simulation Lifecycle', () => {
-
-    test('should handle empty array in median calculation', () => {
-
-      const median = engine.calculateMedian([]);
-
-      expect(median).toBe(0);  describe('Initialization', () => {    test('should initialize with default configuration', () => {const { setupTestDatabase, cleanupTestDatabase, createTestData } = require('../test-utils');const Hazard = require('../../src/models/Hazard');
+      expect(engineWithServices.financialService).toBe(mockFinancial);    await setupTestDatabase();
 
     });
 
-    test('should initialize with default configuration', () => {
+  });    testData = await createTestData();
 
-    test('should calculate median for odd number of elements', () => {
 
-      const median = engine.calculateMedian([1, 3, 5]);      expect(engine).toBeDefined();      expect(engine.integrationService).toBeNull();
 
-      expect(median).toBe(3);
+  describe('Utility Methods', () => {  });
 
-    });      expect(engine.probService).toBeInstanceOf(ProbabilityDistributionService);
+    test('should generate unique simulation run IDs', () => {
 
+      const ids = Array.from({ length: 10 }, () => engine.generateSimulationRunId());// Import test utilitiesconst Account = require('../../src/models/Account');const Account = require('../../src/models/Account');
 
+      const uniqueIds = new Set(ids);
 
-    test('should calculate median for even number of elements', () => {      expect(engine.runningSimulations).toBeInstanceOf(Map);      expect(engine.financialService).toBeNull();
-
-      const median = engine.calculateMedian([1, 2, 3, 4]);
-
-      expect(median).toBe(2.5);    });
-
-    });
-
-  });      expect(engine.probService).toBeInstanceOf(ProbabilityDistributionService);
-
-
-
-  describe('Random Location Generation', () => {    test('should initialize with injected services', () => {
-
-    test('should generate random location within bounds', () => {
-
-      const config = {      const mockIntegration = { test: 'integration' };      expect(engine.runningSimulations).toBeInstanceOf(Map);describe('CATSimulationEngine - Phase 3 Service Testing', () => {const Account = require('../../src/models/Account');const SimulationEvent = require('../../src/models/SimulationEvent');const SimulationEvent = require('../../src/models/SimulationEvent');
-
-        bounds: {
-
-          north: 49.0,      const mockFinancial = { test: 'financial' };
-
-          south: 25.0,
-
-          east: -66.0,          });
-
-          west: -125.0
-
-        }      const engineWithServices = new CATSimulationEngine(mockIntegration, mockFinancial);
-
-      };
-
-  let engine;
-
-      const location = engine.generateRandomLocation(config);
-
-            expect(engineWithServices.integrationService).toBe(mockIntegration);
-
-      expect(location).toBeDefined();
-
-      expect(location.latitude).toBeGreaterThanOrEqual(config.bounds.south);      expect(engineWithServices.financialService).toBe(mockFinancial);    test('should initialize with injected services', () => {
-
-      expect(location.latitude).toBeLessThanOrEqual(config.bounds.north);
-
-      expect(location.longitude).toBeGreaterThanOrEqual(config.bounds.west);    });
-
-      expect(location.longitude).toBeLessThanOrEqual(config.bounds.east);
-
-    });  });      const mockIntegration = { test: 'integration' };  let testData;const Vulnerability = require('../../src/models/Vulnerability');
-
-  });
-
-
-
-  describe('Simulation Configuration Validation', () => {
-
-    test('should validate valid configuration', () => {  describe('Core Simulation Lifecycle', () => {      const mockFinancial = { test: 'financial' };
-
-      const validConfig = {
-
-        numSimulations: 1000,    test('should handle empty array in median calculation', () => {
-
-        bounds: {
-
-          north: 49.0,      const median = engine.calculateMedian([]);      
-
-          south: 25.0,
-
-          east: -66.0,      expect(median).toBe(0);
-
-          west: -125.0
-
-        },    });      const engineWithServices = new CATSimulationEngine(mockIntegration, mockFinancial);
-
-        timeFrame: {
-
-          startYear: 2024,
-
-          endYear: 2025
-
-        }    test('should calculate median for odd number of elements', () => {        beforeAll(async () => {const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');const Hazard = require('../../src/models/Hazard');const Hazard = require('../../src/models/Hazard');
-
-      };
-
-      const median = engine.calculateMedian([1, 3, 5]);
-
-      expect(() => engine.validateConfiguration(validConfig)).not.toThrow();
-
-    });      expect(median).toBe(3);      expect(engineWithServices.integrationService).toBe(mockIntegration);
-
-
-
-    test('should reject invalid configuration', () => {    });
-
-      const invalidConfig = {
-
-        numSimulations: -1,      expect(engineWithServices.financialService).toBe(mockFinancial);    await setupTestDatabase();
-
-        bounds: null
-
-      };    test('should calculate median for even number of elements', () => {
-
-
-
-      expect(() => engine.validateConfiguration(invalidConfig)).toThrow();      const median = engine.calculateMedian([1, 2, 3, 4]);    });
-
-    });
-
-  });      expect(median).toBe(2.5);
-
-});
-    });  });    testData = await createTestData();
-
-  });
-
-
-
-  describe('Random Location Generation', () => {
-
-    test('should generate random location within bounds', () => {  describe('Utility Methods', () => {  });
-
-      const config = {
-
-        bounds: {    test('should generate unique simulation run IDs', () => {
-
-          north: 49.0,
-
-          south: 25.0,      const ids = Array.from({ length: 10 }, () => engine.generateSimulationRunId());// Import test utilitiesconst Account = require('../../src/models/Account');const Account = require('../../src/models/Account');
-
-          east: -66.0,
-
-          west: -125.0      const uniqueIds = new Set(ids);
-
-        }
-
-      };      expect(uniqueIds.size).toBe(10);  afterAll(async () => {
-
-
-
-      const location = engine.generateRandomLocation(config);      
+      expect(uniqueIds.size).toBe(10);  afterAll(async () => {
 
       
 
-      expect(location).toBeDefined();      ids.forEach(id => {    await cleanupTestDatabase();const { setupTestDatabase, cleanupTestDatabase, createTestData } = require('../test-utils');
+      ids.forEach(id => {    await cleanupTestDatabase();const { setupTestDatabase, cleanupTestDatabase, createTestData } = require('../test-utils');
 
-      expect(location.latitude).toBeGreaterThanOrEqual(config.bounds.south);
+        expect(id).toMatch(/^SIMRUN-\d{8}-\d{6}$/);
 
-      expect(location.latitude).toBeLessThanOrEqual(config.bounds.north);        expect(id).toMatch(/^SIMRUN-\d{8}-\d{6}$/);
-
-      expect(location.longitude).toBeGreaterThanOrEqual(config.bounds.west);
-
-      expect(location.longitude).toBeLessThanOrEqual(config.bounds.east);      });  });
+      });  });
 
     });
 
-  });    });
+const Vulnerability = require('../../src/models/Vulnerability');const Vulnerability = require('../../src/models/Vulnerability');
 
+    test('should generate unique event IDs', () => {
 
+      const ids = Array.from({ length: 10 }, () => engine.generateEventId());  beforeEach(async () => {
 
-  describe('Simulation Configuration Validation', () => {const Vulnerability = require('../../src/models/Vulnerability');const Vulnerability = require('../../src/models/Vulnerability');
+      const uniqueIds = new Set(ids);
 
-    test('should validate valid configuration', () => {
+      expect(uniqueIds.size).toBe(10);    // Initialize enginedescribe('CATSimulationEngine - Phase 3 Service Testing', () => {
 
-      const validConfig = {    test('should generate unique event IDs', () => {
+      
 
-        numSimulations: 1000,
+      ids.forEach(id => {    engine = new CATSimulationEngine();
 
-        bounds: {      const ids = Array.from({ length: 10 }, () => engine.generateEventId());  beforeEach(async () => {
+        expect(id).toMatch(/^SIM-\d{8}-\d{6}$/);
 
-          north: 49.0,
-
-          south: 25.0,      const uniqueIds = new Set(ids);
-
-          east: -66.0,
-
-          west: -125.0      expect(uniqueIds.size).toBe(10);    // Initialize enginedescribe('CATSimulationEngine - Phase 3 Service Testing', () => {
-
-        },
-
-        timeFrame: {      
-
-          startYear: 2024,
-
-          endYear: 2025      ids.forEach(id => {    engine = new CATSimulationEngine();
-
-        }
-
-      };        expect(id).toMatch(/^SIM-\d{8}-\d{6}$/);
-
-
-
-      expect(() => engine.validateConfiguration(validConfig)).not.toThrow();      });      let engine;const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');
+      });      let engine;const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');
 
     });
 
-    });
+    // Clean up any existing data
 
-    test('should reject invalid configuration', () => {
-
-      const invalidConfig = {    // Clean up any existing data
-
-        numSimulations: -1,
-
-        bounds: null    test('should generate valid random months', () => {
-
-      };
+    test('should generate valid random months', () => {
 
       const months = Array.from({ length: 20 }, () => engine.generateRandomMonth());    await SimulationRun.deleteMany({});  let testData;
 
-      expect(() => engine.validateConfiguration(invalidConfig)).toThrow();
+      
 
-    });      
-
-  });
-
-});      months.forEach(month => {    await SimulationEvent.deleteMany({});
+      months.forEach(month => {    await SimulationEvent.deleteMany({});
 
         expect(month).toBeGreaterThanOrEqual(1);
 

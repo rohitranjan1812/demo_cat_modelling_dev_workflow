@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { mockMongoose } = require('./mock-database');
+const { createDatabaseIndexes } = require('../src/tools/database-indexes');
 
 /**
  * Test Environment Manager
@@ -25,6 +26,14 @@ class TestEnvironment {
         maxPoolSize: 10,
         minPoolSize: 1
       });
+      
+      // Create database indexes to ensure unique constraints work
+      try {
+        await createDatabaseIndexes();
+        console.log('✅ Database indexes created');
+      } catch (indexError) {
+        console.warn('⚠️  Could not create database indexes:', indexError.message);
+      }
       
       this.isDatabaseAvailable = true;
       console.log('✅ Real database connected for tests');

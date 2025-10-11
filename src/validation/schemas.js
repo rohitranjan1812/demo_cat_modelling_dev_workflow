@@ -21,7 +21,7 @@ const accountSchema = Joi.object({
   metadata: Joi.object().pattern(Joi.string(), Joi.any())
 });
 
-const accountUpdateSchema = accountSchema.fork(['accountId', 'createdBy'], (schema) => schema.optional());
+const accountUpdateSchema = accountSchema.fork(['accountId', 'createdBy', 'accountType', 'accountName'], (schema) => schema.optional());
 
 // Policy validation schemas
 const coverageSchema = Joi.object({

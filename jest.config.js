@@ -10,5 +10,8 @@ module.exports = {
     '/node_modules/',
     '/frontend/'
   ],
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js']
+  setupFilesAfterEnv: [
+    '<rootDir>/tests/setup.js',
+    '<rootDir>/tests/global-setup.js'
+  ]
 };

@@ -92,9 +92,8 @@ class HazardService extends BaseService {
    */
   async getHazardById(id) {
     try {
-      const hazard = await this.findById(id, {
-        populate: ['linkedVulnerabilities', 'linkedAccounts']
-      });
+      const hazard = await this.model.findOne({ hazardId: id })
+        .populate('linkedVulnerabilities');
 
       if (!hazard) {
         throw new Error('Hazard not found');
@@ -177,7 +176,11 @@ class HazardService extends BaseService {
         updatedAt: new Date()
       };
 
-      const updatedHazard = await this.updateById(id, updatePayload);
+      const updatedHazard = await this.model.findOneAndUpdate(
+        { hazardId: id },
+        updatePayload,
+        { new: true, runValidators: true }
+      );
 
       if (!updatedHazard) {
         throw new Error('Hazard not found');
@@ -197,7 +200,15 @@ class HazardService extends BaseService {
    */
   async deleteHazard(id, userId) {
     try {
-      const deletedHazard = await this.deleteById(id, { soft: true });
+      const deletedHazard = await this.model.findOneAndUpdate(
+        { hazardId: id },
+        { 
+          status: 'Deleted',
+          lastModifiedBy: userId,
+          updatedAt: new Date()
+        },
+        { new: true }
+      );
 
       if (!deletedHazard) {
         throw new Error('Hazard not found');
