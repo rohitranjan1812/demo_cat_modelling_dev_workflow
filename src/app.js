@@ -85,6 +85,10 @@ app.use('/api/v1', vulnerabilityRoutes);
 app.use('/api/v1/integration', integrationRoutes);
 app.use('/api/v1/simulations', simulationRoutes);
 
+// Legacy route support (for backward compatibility)
+app.use('/api', hazardRoutes);
+app.use('/api', vulnerabilityRoutes);
+
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({

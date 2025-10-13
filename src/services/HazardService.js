@@ -133,9 +133,12 @@ class HazardService extends BaseService {
    */
   async createHazard(hazardData, userId) {
     try {
-      // Generate hazard ID
-      const hazardCount = await this.count();
-      const hazardId = `HAZ-${(hazardCount + 1).toString().padStart(8, '0')}`;
+      // Use provided hazardId or generate one if not provided
+      let hazardId = hazardData.hazardId;
+      if (!hazardId) {
+        const hazardCount = await this.count();
+        hazardId = `HAZ-${(hazardCount + 1).toString().padStart(8, '0')}`;
+      }
 
       const newHazardData = {
         ...hazardData,
@@ -341,11 +344,31 @@ class HazardService extends BaseService {
       const historicalHazards = await this.count({ ...filters, isHistorical: true });
       const simulatedHazards = await this.count({ ...filters, isSimulated: true });
 
+      // Transform stats to match expected format
+      const bySeverity = {};
+      const byType = {};
+      
+      if (stats.severity) {
+        stats.severity.forEach(item => {
+          bySeverity[item._id] = item.count;
+        });
+      }
+      
+      if (stats.hazardType) {
+        stats.hazardType.forEach(item => {
+          byType[item._id] = item.count;
+        });
+      }
+
       return this.createSuccessResponse({
-        totalHazards,
-        activeHazards,
-        historicalHazards,
-        simulatedHazards,
+        overall: {
+          totalHazards,
+          activeHazards,
+          historicalHazards,
+          simulatedHazards
+        },
+        bySeverity,
+        byType,
         breakdown: stats
       }, 'Hazard statistics retrieved successfully');
     } catch (error) {

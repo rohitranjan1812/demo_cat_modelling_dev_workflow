@@ -16,18 +16,17 @@ router.get('/hazards/bounds', hazardController.getHazardsInBounds.bind(hazardCon
 router.get('/hazards/near', hazardController.getHazardsNearLocation.bind(hazardController));
 router.get('/hazards/search', hazardController.searchHazards.bind(hazardController));
 router.get('/hazards/statistics', hazardController.getHazardStatistics.bind(hazardController));
+// Legacy routes for backward compatibility - MUST be before :id route
+router.get('/hazards/affecting-location', HazardController.getHazardsAffectingLocation);
 router.get('/hazards', hazardController.getAllHazards.bind(hazardController));
 router.get('/hazards/:id', hazardController.getHazardById.bind(hazardController));
 router.post('/hazards', hazardController.createHazard.bind(hazardController));
-router.put('/hazards/:id', validateHazard, hazardController.updateHazard.bind(hazardController));
+router.put('/hazards/:id', hazardController.updateHazard.bind(hazardController));
 router.delete('/hazards/:id', hazardController.deleteHazard.bind(hazardController));
 
 // Hazard-Vulnerability Linking Routes
 router.post('/hazards/:id/link-vulnerability', hazardController.linkVulnerability.bind(hazardController));
 router.delete('/hazards/:id/unlink-vulnerability/:vulnerabilityId', hazardController.unlinkVulnerability.bind(hazardController));
-
-// Legacy routes for backward compatibility
-router.get('/hazards/affecting-location', HazardController.getHazardsAffectingLocation);
 
 // Hazard Event Routes
 // IMPORTANT: Specific routes MUST come before parametrized routes (:id)

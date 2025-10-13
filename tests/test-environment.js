@@ -1,3 +1,6 @@
+// Load environment variables
+require('dotenv').config();
+
 const mongoose = require('mongoose');
 const { mockMongoose } = require('./mock-database');
 const { createDatabaseIndexes } = require('../src/tools/database-indexes');
@@ -15,8 +18,8 @@ class TestEnvironment {
 
   async initialize() {
     try {
-      // Try to connect to real MongoDB
-      const testDbUri = process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/cat_modeling_exposure_test';
+      // Try to connect to real MongoDB with replica set support
+      const testDbUri = process.env.MONGODB_TEST_URI || 'mongodb://127.0.0.1:27017/cat_modeling_exposure_test?replicaSet=rs0';
       
       await mongoose.connect(testDbUri, {
         useNewUrlParser: true,

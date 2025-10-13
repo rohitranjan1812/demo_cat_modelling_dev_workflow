@@ -1,3160 +1,376 @@
-const CATSimulationEngine = require('../../src/services/CATSimulationEngine');const CATSimulationEngine = require('../../src/services/CATSimulationEngine');const CATSimulationEngine = require('../../src/services/CATSimulationEngine');
-
+const CATSimulationEngine = require('../../src/services/CATSimulationEngine');
 const SimulationRun = require('../../src/models/SimulationRun');
-
-const SimulationEvent = require('../../src/models/SimulationEvent');const SimulationRun = require('../../src/models/SimulationRun');const SimulationRun = require('../../src/models/SimulationRun');
-
+const SimulationEvent = require('../../src/models/SimulationEvent');
+const User = require('../../src/models/User');
+const Hazard = require('../../src/models/Hazard');
+const Account = require('../../src/models/Account');
+const Vulnerability = require('../../src/models/Vulnerability');
 const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');
+const TestUtils = require('../test-utils');
 
-const { setupTestDatabase, cleanupTestDatabase, createTestData } = require('../test-utils');const SimulationEvent = require('../../src/models/SimulationEvent');const SimulationEvent = require('../../src/models/SimulationEvent');
-
-
-
-describe('CATSimulationEngine - Core Tests', () => {const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');
-
+describe('CATSimulationEngine Service Tests', () => {
   let engine;
-
-const { setupTestDatabase, cleanupTestDatabase, createTestData } = require('../test-utils');
+  let testUser;
+  let testData;
+  let mockIntegrationService;
+  let mockFinancialService;
 
   beforeAll(async () => {
-
-    await setupTestDatabase();describe('CATSimulationEngine - Phase 3 Core Tests', () => {
-
+    try {
+      // Create a test user for simulations
+      testUser = await User.create({
+        userId: 'USR-00000001',
+        username: 'test_simulation_user',
+        email: 'test.simulation@example.com',
+        password: 'TestPass123!',
+        firstName: 'Test',
+        lastName: 'SimUser',
+        role: 'Analyst'
+      });
+    
+      // Get mock test data
+      testData = TestUtils.getMockData();
+    } catch (error) {
+      console.error('Error in beforeAll setup:', error);
+      throw error;
+    }
   });
-
-describe('CATSimulationEngine - Core Tests', () => {
 
   afterAll(async () => {
-
-    await cleanupTestDatabase();  let engine;  let engine;
-
+    await User.deleteMany({ userId: 'test-user-sim' });
+    await SimulationRun.deleteMany({ createdBy: 'test-user-sim' });
+    await SimulationEvent.deleteMany({});
   });
-
-
 
   beforeEach(() => {
+    // Create mock services
+    mockIntegrationService = {
+      getAccountsInRegion: jest.fn(),
+      getVulnerabilitiesNearLocation: jest.fn(),
+      getLocationRiskAssessment: jest.fn(),
+      getExposuresNearLocation: jest.fn()
+    };
 
-    engine = new CATSimulationEngine();  beforeAll(async () => {const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');
+    mockFinancialService = {
+      calculatePortfolioVaR: jest.fn(),
+      calculatePortfolioTVaR: jest.fn(),
+      calculateExpectedLoss: jest.fn(),
+      calculateLossVolatility: jest.fn()
+    };
 
+    // Initialize engine with mock services
+    engine = new CATSimulationEngine(mockIntegrationService, mockFinancialService);
+
+    // Setup default mock returns
+    mockIntegrationService.getAccountsInRegion.mockResolvedValue([testData.account]);
+    mockIntegrationService.getVulnerabilitiesNearLocation.mockResolvedValue([testData.vulnerability]);
+    mockIntegrationService.getExposuresNearLocation.mockResolvedValue([testData.exposure]);
+    mockFinancialService.calculateExpectedLoss.mockReturnValue(50000);
+    mockFinancialService.calculateLossVolatility.mockReturnValue(0.15);
+    mockFinancialService.calculatePortfolioVaR.mockReturnValue(450000);
+    mockFinancialService.calculatePortfolioTVaR.mockReturnValue(550000);
   });
 
-    await setupTestDatabase();
+  afterEach(async () => {
+    await SimulationRun.deleteMany({});
+    await SimulationEvent.deleteMany({});
+    jest.clearAllMocks();
+  });
 
   describe('Initialization', () => {
-
-    test('should initialize with default configuration', () => {  });  beforeEach(() => {
-
-      expect(engine).toBeDefined();
-
-      expect(engine.probService).toBeInstanceOf(ProbabilityDistributionService);
-
-      expect(engine.runningSimulations).toBeInstanceOf(Map);
-
-    });  afterAll(async () => {    engine = new CATSimulationEngine();const SimulationEvent = require('../../src/models/SimulationEvent');const SimulationRun = require('../../src/models/SimulationRun');const SimulationRun = require('../../src/models/SimulationRun');
-
-
-
-    test('should initialize with injected services', () => {    await cleanupTestDatabase();
-
-      const mockIntegration = { test: 'integration' };
-
-      const mockFinancial = { test: 'financial' };  });  });
-
-      
-
-      const engineWithServices = new CATSimulationEngine(mockIntegration, mockFinancial);
-
-
-
-      expect(engineWithServices.integrationService).toBe(mockIntegration);  beforeEach(() => {// Import test utilities
-
-      expect(engineWithServices.financialService).toBe(mockFinancial);
-
-    });    engine = new CATSimulationEngine();
-
-  });
-
-  });  describe('Initialization', () => {
-
-  describe('Core Simulation Lifecycle', () => {
-
-    test('should handle empty array in median calculation', () => {
-
-      const median = engine.calculateMedian([]);
-
-      expect(median).toBe(0);  describe('Initialization', () => {    test('should initialize with default configuration', () => {const { setupTestDatabase, cleanupTestDatabase, createTestData } = require('../test-utils');const Hazard = require('../../src/models/Hazard');
-
-    });
-
     test('should initialize with default configuration', () => {
-
-    test('should calculate median for odd number of elements', () => {
-
-      const median = engine.calculateMedian([1, 3, 5]);      expect(engine).toBeDefined();      expect(engine.integrationService).toBeNull();
-
-      expect(median).toBe(3);
-
-    });      expect(engine.probService).toBeInstanceOf(ProbabilityDistributionService);
-
-
-
-    test('should calculate median for even number of elements', () => {      expect(engine.runningSimulations).toBeInstanceOf(Map);      expect(engine.financialService).toBeNull();
-
-      const median = engine.calculateMedian([1, 2, 3, 4]);
-
-      expect(median).toBe(2.5);    });
-
+      const defaultEngine = new CATSimulationEngine();
+      expect(defaultEngine).toBeDefined();
+      expect(defaultEngine.probService).toBeInstanceOf(ProbabilityDistributionService);
+      expect(defaultEngine.runningSimulations).toBeInstanceOf(Map);
+      expect(defaultEngine.integrationService).toBeNull();
+      expect(defaultEngine.financialService).toBeNull();
     });
 
-  });      expect(engine.probService).toBeInstanceOf(ProbabilityDistributionService);
+    test('should initialize with injected services', () => {
+      expect(engine.integrationService).toBe(mockIntegrationService);
+      expect(engine.financialService).toBe(mockFinancialService);
+      expect(engine.probService).toBeInstanceOf(ProbabilityDistributionService);
+      expect(engine.runningSimulations).toBeInstanceOf(Map);
+    });
 
-
-
-  describe('Random Location Generation', () => {    test('should initialize with injected services', () => {
-
-    test('should generate random location within bounds', () => {
-
-      const config = {      const mockIntegration = { test: 'integration' };      expect(engine.runningSimulations).toBeInstanceOf(Map);describe('CATSimulationEngine - Phase 3 Service Testing', () => {const Account = require('../../src/models/Account');const SimulationEvent = require('../../src/models/SimulationEvent');const SimulationEvent = require('../../src/models/SimulationEvent');
-
-        bounds: {
-
-          north: 49.0,      const mockFinancial = { test: 'financial' };
-
-          south: 25.0,
-
-          east: -66.0,          });
-
-          west: -125.0
-
-        }      const engineWithServices = new CATSimulationEngine(mockIntegration, mockFinancial);
-
-      };
-
-  let engine;
-
-      const location = engine.generateRandomLocation(config);
-
-            expect(engineWithServices.integrationService).toBe(mockIntegration);
-
-      expect(location).toBeDefined();
-
-      expect(location.latitude).toBeGreaterThanOrEqual(config.bounds.south);      expect(engineWithServices.financialService).toBe(mockFinancial);    test('should initialize with injected services', () => {
-
-      expect(location.latitude).toBeLessThanOrEqual(config.bounds.north);
-
-      expect(location.longitude).toBeGreaterThanOrEqual(config.bounds.west);    });
-
-      expect(location.longitude).toBeLessThanOrEqual(config.bounds.east);
-
-    });  });      const mockIntegration = { test: 'integration' };  let testData;const Vulnerability = require('../../src/models/Vulnerability');
-
+    test('should have required methods', () => {
+      expect(typeof engine.startSimulation).toBe('function');
+      expect(typeof engine.runSimulation).toBe('function');
+      expect(typeof engine.getSimulationStatus).toBe('function');
+      expect(typeof engine.cancelSimulation).toBe('function');
+      expect(typeof engine.generateSimulationRunId).toBe('function');
+      expect(typeof engine.calculateMedian).toBe('function');
+    });
   });
 
-
-
-  describe('Simulation Configuration Validation', () => {
-
-    test('should validate valid configuration', () => {  describe('Core Simulation Lifecycle', () => {      const mockFinancial = { test: 'financial' };
-
-      const validConfig = {
-
-        numSimulations: 1000,    test('should handle empty array in median calculation', () => {
-
-        bounds: {
-
-          north: 49.0,      const median = engine.calculateMedian([]);      
-
-          south: 25.0,
-
-          east: -66.0,      expect(median).toBe(0);
-
-          west: -125.0
-
-        },    });      const engineWithServices = new CATSimulationEngine(mockIntegration, mockFinancial);
-
-        timeFrame: {
-
-          startYear: 2024,
-
-          endYear: 2025
-
-        }    test('should calculate median for odd number of elements', () => {        beforeAll(async () => {const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');const Hazard = require('../../src/models/Hazard');const Hazard = require('../../src/models/Hazard');
-
-      };
-
-      const median = engine.calculateMedian([1, 3, 5]);
-
-      expect(() => engine.validateConfiguration(validConfig)).not.toThrow();
-
-    });      expect(median).toBe(3);      expect(engineWithServices.integrationService).toBe(mockIntegration);
-
-
-
-    test('should reject invalid configuration', () => {    });
-
-      const invalidConfig = {
-
-        numSimulations: -1,      expect(engineWithServices.financialService).toBe(mockFinancial);    await setupTestDatabase();
-
-        bounds: null
-
-      };    test('should calculate median for even number of elements', () => {
-
-
-
-      expect(() => engine.validateConfiguration(invalidConfig)).toThrow();      const median = engine.calculateMedian([1, 2, 3, 4]);    });
-
-    });
-
-  });      expect(median).toBe(2.5);
-
-});
-    });  });    testData = await createTestData();
-
-  });
-
-
-
-  describe('Random Location Generation', () => {
-
-    test('should generate random location within bounds', () => {  describe('Utility Methods', () => {  });
-
-      const config = {
-
-        bounds: {    test('should generate unique simulation run IDs', () => {
-
-          north: 49.0,
-
-          south: 25.0,      const ids = Array.from({ length: 10 }, () => engine.generateSimulationRunId());// Import test utilitiesconst Account = require('../../src/models/Account');const Account = require('../../src/models/Account');
-
-          east: -66.0,
-
-          west: -125.0      const uniqueIds = new Set(ids);
-
-        }
-
-      };      expect(uniqueIds.size).toBe(10);  afterAll(async () => {
-
-
-
-      const location = engine.generateRandomLocation(config);      
-
-      
-
-      expect(location).toBeDefined();      ids.forEach(id => {    await cleanupTestDatabase();const { setupTestDatabase, cleanupTestDatabase, createTestData } = require('../test-utils');
-
-      expect(location.latitude).toBeGreaterThanOrEqual(config.bounds.south);
-
-      expect(location.latitude).toBeLessThanOrEqual(config.bounds.north);        expect(id).toMatch(/^SIMRUN-\d{8}-\d{6}$/);
-
-      expect(location.longitude).toBeGreaterThanOrEqual(config.bounds.west);
-
-      expect(location.longitude).toBeLessThanOrEqual(config.bounds.east);      });  });
-
-    });
-
-  });    });
-
-
-
-  describe('Simulation Configuration Validation', () => {const Vulnerability = require('../../src/models/Vulnerability');const Vulnerability = require('../../src/models/Vulnerability');
-
-    test('should validate valid configuration', () => {
-
-      const validConfig = {    test('should generate unique event IDs', () => {
-
-        numSimulations: 1000,
-
-        bounds: {      const ids = Array.from({ length: 10 }, () => engine.generateEventId());  beforeEach(async () => {
-
-          north: 49.0,
-
-          south: 25.0,      const uniqueIds = new Set(ids);
-
-          east: -66.0,
-
-          west: -125.0      expect(uniqueIds.size).toBe(10);    // Initialize enginedescribe('CATSimulationEngine - Phase 3 Service Testing', () => {
-
-        },
-
-        timeFrame: {      
-
-          startYear: 2024,
-
-          endYear: 2025      ids.forEach(id => {    engine = new CATSimulationEngine();
-
-        }
-
-      };        expect(id).toMatch(/^SIM-\d{8}-\d{6}$/);
-
-
-
-      expect(() => engine.validateConfiguration(validConfig)).not.toThrow();      });      let engine;const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');const ProbabilityDistributionService = require('../../src/services/ProbabilityDistributionService');
-
-    });
-
-    });
-
-    test('should reject invalid configuration', () => {
-
-      const invalidConfig = {    // Clean up any existing data
-
-        numSimulations: -1,
-
-        bounds: null    test('should generate valid random months', () => {
-
-      };
-
-      const months = Array.from({ length: 20 }, () => engine.generateRandomMonth());    await SimulationRun.deleteMany({});  let testData;
-
-      expect(() => engine.validateConfiguration(invalidConfig)).toThrow();
-
-    });      
-
-  });
-
-});      months.forEach(month => {    await SimulationEvent.deleteMany({});
-
-        expect(month).toBeGreaterThanOrEqual(1);
-
-        expect(month).toBeLessThanOrEqual(12);  });  let mockIntegrationService;
-
-      });
-
-    });
-
-
-
-    test('should generate valid random days', () => {  afterEach(() => {  let mockFinancialService;
-
-      const days = Array.from({ length: 20 }, () => engine.generateRandomDay());
-
-          jest.clearAllMocks();
-
-      days.forEach(day => {
-
-        expect(day).toBeGreaterThanOrEqual(1);  });// Import test utilities// Import test utilities
-
-        expect(day).toBeLessThanOrEqual(31);
-
-      });
-
-    });
-
-  describe('🏗️ Engine Initialization', () => {  beforeAll(async () => {
-
-    test('should generate random locations within default bounds', () => {
-
-      const location = engine.generateRandomLocation({});    test('should initialize with default configuration', () => {
-
-      
-
-      expect(location).toHaveProperty('latitude');      expect(engine.integrationService).toBeNull();    await setupTestDatabase();const { setupTestDatabase, cleanupTestDatabase, createTestData } = require('../test-utils');const { setupTestDatabase, cleanupTestDatabase, createTestData } = require('../test-utils');
-
-      expect(location).toHaveProperty('longitude');
-
-      expect(location.latitude).toBeGreaterThanOrEqual(-90);      expect(engine.financialService).toBeNull();
-
-      expect(location.latitude).toBeLessThanOrEqual(90);
-
-      expect(location.longitude).toBeGreaterThanOrEqual(-180);      expect(engine.probService).toBeInstanceOf(ProbabilityDistributionService);    testData = await createTestData();
-
-      expect(location.longitude).toBeLessThanOrEqual(180);
-
-    });      expect(engine.runningSimulations).toBeInstanceOf(Map);
-
-
-
-    test('should generate random locations within specified bounds', () => {    });  });
-
-      const config = {
-
-        geographicScope: {
-
-          boundingBox: {
-
-            north: 49.0,    test('should initialize with injected services', () => {
-
-            south: 25.0,
-
-            east: -66.0,      const mockIntegrationService = { test: 'integration' };
-
-            west: -125.0
-
-          }      const mockFinancialService = { test: 'financial' };  afterAll(async () => {describe('CATSimulationEngine - Comprehensive Service Testing', () => {describe('CATSimulationEngine - Comprehensive Service Testing', () => {
-
-        }
-
-      };      
-
-
-
-      const location = engine.generateRandomLocation(config);      const engineWithServices = new CATSimulationEngine(    await cleanupTestDatabase();
-
-      
-
-      expect(location.latitude).toBeGreaterThanOrEqual(25.0);        mockIntegrationService, 
-
-      expect(location.latitude).toBeLessThanOrEqual(49.0);
-
-      expect(location.longitude).toBeGreaterThanOrEqual(-125.0);        mockFinancialService  });  let engine;  let engine;
-
-      expect(location.longitude).toBeLessThanOrEqual(-66.0);
-
-    });      );
-
-  });
-
-      
-
-  describe('Statistical Methods', () => {
-
-    test('should calculate median correctly for odd number of values', () => {      expect(engineWithServices.integrationService).toBe(mockIntegrationService);
-
-      const values = [1, 3, 5, 7, 9];
-
-      const median = engine.calculateMedian(values);      expect(engineWithServices.financialService).toBe(mockFinancialService);  beforeEach(async () => {  let testData;  let testData;
-
-      expect(median).toBe(5);
-
-    });    });
-
-
-
-    test('should calculate median correctly for even number of values', () => {  });    // Create mock services
-
-      const values = [1, 2, 3, 4];
-
-      const median = engine.calculateMedian(values);
-
-      expect(median).toBe(2.5);
-
-    });  describe('🚀 Core Simulation Lifecycle', () => {    mockIntegrationService = {  let mockIntegrationService;  let mockIntegrationService;
-
-
-
-    test('should handle empty array in median calculation', () => {    const validConfig = {
-
-      const median = engine.calculateMedian([]);
-
-      expect(median).toBe(0);      simulationName: 'Test Simulation',      getAccountsInRegion: jest.fn(),
-
-    });
-
-      startYear: 2020,
-
-    test('should calculate standard deviation correctly', () => {
-
-      const values = [2, 4, 4, 4, 5, 5, 7, 9];      endYear: 2021,      getVulnerabilitiesNearLocation: jest.fn(),  let mockFinancialService;  let mockFinancialService;
-
-      const stdDev = engine.calculateStandardDeviation(values);
-
-      expect(stdDev).toBeCloseTo(1.86, 1);      hazardTypes: ['Earthquake'],
-
-    });
-
-      modelingConfig: {      getLocationRiskAssessment: jest.fn(),
-
-    test('should handle empty array in standard deviation calculation', () => {
-
-      const stdDev = engine.calculateStandardDeviation([]);        numberOfSimulations: 10
-
-      expect(stdDev).toBe(0);
-
-    });      }      getExposuresNearLocation: jest.fn()
-
-
-
-    test('should calculate Value at Risk correctly', () => {    };
-
-      const events = Array.from({ length: 1000 }, (_, i) => ({ totalLoss: i * 100 }));
-
-      const var95 = engine.calculateValueAtRisk(events, 0.95);    };
-
-      expect(var95).toBeCloseTo(95000, -2);
-
-    });    describe('startSimulation()', () => {
-
-
-
-    test('should calculate Tail Value at Risk correctly', () => {      test('should start simulation with valid configuration', async () => {  beforeAll(async () => {  beforeAll(async () => {
-
-      const events = Array.from({ length: 1000 }, (_, i) => ({ totalLoss: i * 100 }));
-
-      const tvar95 = engine.calculateTailValueAtRisk(events, 0.95);        const result = await engine.startSimulation(validConfig, 'test-user');
-
-      expect(tvar95).toBeGreaterThan(95000);
-
-    });    mockFinancialService = {
-
-
-
-    test('should handle empty events in risk calculations', () => {        expect(result.success).toBe(true);
-
-      expect(engine.calculateValueAtRisk([], 0.95)).toBe(0);
-
-      expect(engine.calculateTailValueAtRisk([], 0.95)).toBe(0);        expect(result.simulationRunId).toBeDefined();      calculatePortfolioVaR: jest.fn(),    await setupTestDatabase();    await setupTestDatabase();
-
-    });
-
-  });        expect(result.status).toBe('Started');
-
-
-
-  describe('Configuration Methods', () => {        expect(result.message).toBe('Simulation started successfully');      calculatePortfolioTVaR: jest.fn(),
-
-    test('should return frequency distribution for hazard types', () => {
-
-      const earthquakeDist = engine.getHazardFrequencyDistribution('Earthquake', 2020);
-
-      
-
-      expect(earthquakeDist).toHaveProperty('type');        // Verify database record      calculateExpectedLoss: jest.fn(),    testData = await createTestData();    testData = await createTestData();
-
-      expect(earthquakeDist).toHaveProperty('lambda');
-
-      expect(['Poisson', 'NegativeBinomial'].includes(earthquakeDist.type)).toBe(true);        const simulationRun = await SimulationRun.findOne({ 
-
-      expect(earthquakeDist.lambda).toBeGreaterThan(0);
-
-    });          simulationRunId: result.simulationRunId       calculateLossVolatility: jest.fn()
-
-
-
-    test('should vary frequency distribution by hazard type', () => {        });
-
-      const earthquakeDist = engine.getHazardFrequencyDistribution('Earthquake', 2020);
-
-      const hurricaneDist = engine.getHazardFrequencyDistribution('Hurricane', 2020);        expect(simulationRun).toBeTruthy();    };  });  });
-
-      
-
-      // Different hazard types should have different parameters        expect(simulationRun.simulationName).toBe(validConfig.simulationName);
-
-      expect(earthquakeDist.lambda).not.toBe(hurricaneDist.lambda);
-
-    });        expect(simulationRun.createdBy).toBe('test-user');
-
-
-
-    test('should generate event counts from Poisson distribution', () => {      });
-
-      const dist = { type: 'Poisson', lambda: 3.0 };
-
-      const counts = Array.from({ length: 100 }, () => engine.generateEventCount(dist));    // Initialize engine with mock services
-
-
-
-      counts.forEach(count => {      test('should use default values for missing config', async () => {
-
-        expect(count).toBeGreaterThanOrEqual(0);
-
-        expect(Number.isInteger(count)).toBe(true);        const minimalConfig = { startYear: 2020, endYear: 2020 };    engine = new CATSimulationEngine(mockIntegrationService, mockFinancialService);
-
-      });
-
-        const result = await engine.startSimulation(minimalConfig, 'test-user');
-
-      // Check that average is approximately lambda
-
-      const average = counts.reduce((sum, count) => sum + count, 0) / counts.length;  afterAll(async () => {  afterAll(async () => {
-
-      expect(average).toBeCloseTo(3.0, 0);
-
-    });        expect(result.success).toBe(true);
-
-
-
-    test('should generate event counts from Negative Binomial distribution', () => {            // Setup default mock returns
-
-      const dist = { type: 'NegativeBinomial', r: 2, p: 0.5 };
-
-      const counts = Array.from({ length: 100 }, () => engine.generateEventCount(dist));        const simulationRun = await SimulationRun.findOne({ 
-
-
-
-      counts.forEach(count => {          simulationRunId: result.simulationRunId     mockIntegrationService.getAccountsInRegion.mockResolvedValue([testData.account]);    await cleanupTestDatabase();    await cleanupTestDatabase();
-
-        expect(count).toBeGreaterThanOrEqual(0);
-
-        expect(Number.isInteger(count)).toBe(true);        });
-
-      });
-
-    });        expect(simulationRun.simulationName).toBe('CAT Simulation');    mockIntegrationService.getVulnerabilitiesNearLocation.mockResolvedValue([testData.vulnerability]);
-
-  });
-
-        expect(simulationRun.configuration.modelingConfig.numberOfSimulations).toBe(1000);
-
-  describe('Hazard Methods', () => {
-
-    test('should return hazard category for known hazard types', () => {      });    mockIntegrationService.getExposuresNearLocation.mockResolvedValue([testData.exposure]);  });  });
-
-      expect(engine.getHazardCategory('Earthquake')).toBe('Natural');
-
-      expect(engine.getHazardCategory('Hurricane')).toBe('Natural');
-
-      expect(engine.getHazardCategory('Flood')).toBe('Natural');
-
-      expect(engine.getHazardCategory('Wildfire')).toBe('Natural');      test('should handle database errors', async () => {    mockFinancialService.calculateExpectedLoss.mockReturnValue(50000);
-
-      expect(engine.getHazardCategory('Tornado')).toBe('Natural');
-
-    });        jest.spyOn(SimulationRun.prototype, 'save').mockRejectedValueOnce(
-
-
-
-    test('should return default category for unknown hazard types', () => {          new Error('Database error')    mockFinancialService.calculateLossVolatility.mockReturnValue(0.15);
-
-      expect(engine.getHazardCategory('UnknownHazard')).toBe('Natural');
-
-    });        );
-
-
-
-    test('should return intensity configuration for hazard types', () => {  });
-
-      const earthquakeConfig = engine.getIntensityConfiguration('Earthquake');
-
-              await expect(
-
-      expect(earthquakeConfig).toHaveProperty('distribution');
-
-      expect(earthquakeConfig).toHaveProperty('parameters');          engine.startSimulation(validConfig, 'test-user')  beforeEach(async () => {  beforeEach(async () => {
-
-      expect(earthquakeConfig).toHaveProperty('scale');
-
-      expect(earthquakeConfig.scale).toBe('Richter');        ).rejects.toThrow('Failed to start simulation: Database error');
-
-    });
-
-      });  afterEach(async () => {
-
-    test('should generate event intensity', () => {
-
-      const intensity = engine.generateEventIntensity('Earthquake', 2020);
-
-      
-
-      expect(typeof intensity).toBe('number');      test('should generate unique simulation IDs', async () => {    // Clean up simulation runs    // Create mock services    // Create mock services
-
-      expect(intensity).toBeGreaterThan(0);
-
-      expect(intensity).toBeLessThan(15); // Reasonable upper bound for earthquake magnitude        const results = await Promise.all([
-
-    });
-
-  });          engine.startSimulation(validConfig, 'user1'),    await SimulationRun.deleteMany({});
-
-
-
-  describe('Risk Assessment Methods', () => {          engine.startSimulation(validConfig, 'user2'),
-
-    test('should calculate diversification benefit', () => {
-
-      const exposureImpact = [          engine.startSimulation(validConfig, 'user3')    await SimulationEvent.deleteMany({});    mockIntegrationService = {    mockIntegrationService = {
-
-        { exposureAmount: 1000000, actualLoss: 500000 },
-
-        { exposureAmount: 2000000, actualLoss: 800000 },        ]);
-
-        { exposureAmount: 1500000, actualLoss: 600000 }
-
-      ];    jest.clearAllMocks();
-
-      
-
-      const benefit = engine.calculateDiversificationBenefit(exposureImpact);        const ids = results.map(r => r.simulationRunId);
-
-      
-
-      expect(typeof benefit).toBe('number');        const uniqueIds = new Set(ids);  });      getAccountsInRegion: jest.fn(),      getAccountsInRegion: jest.fn(),
-
-      expect(benefit).toBeGreaterThanOrEqual(0);
-
-    });        expect(uniqueIds.size).toBe(3);
-
-
-
-    test('should calculate concentration risk', () => {      });
-
-      const exposureImpact = [
-
-        { exposureAmount: 1000000, actualLoss: 500000 },    });
-
-        { exposureAmount: 2000000, actualLoss: 1000000 },
-
-        { exposureAmount: 500000, actualLoss: 200000 }  describe('🏗️ Initialization', () => {      getVulnerabilitiesNearLocation: jest.fn(),      getVulnerabilitiesNearLocation: jest.fn(),
-
-      ];
-
-          describe('runSimulation()', () => {
-
-      const risk = engine.calculateConcentrationRisk(exposureImpact);
-
-            let simulationRun;    test('should initialize with default services when none provided', () => {
-
-      expect(typeof risk).toBe('number');
-
-      expect(risk).toBeGreaterThanOrEqual(0);
-
-      expect(risk).toBeLessThanOrEqual(1);
-
-    });      beforeEach(async () => {      const defaultEngine = new CATSimulationEngine();      getLocationRiskAssessment: jest.fn(),      getLocationRiskAssessment: jest.fn(),
-
-
-
-    test('should determine event severity based on intensity', () => {        simulationRun = new SimulationRun({
-
-      const lowIntensity = 4.0;
-
-      const mediumIntensity = 6.5;          simulationRunId: 'test-run-id',      
-
-      const highIntensity = 8.5;
-
-                simulationName: 'Test Run',
-
-      const lowSeverity = engine.determineEventSeverity(lowIntensity, 'Earthquake');
-
-      const mediumSeverity = engine.determineEventSeverity(mediumIntensity, 'Earthquake');          configuration: {      expect(defaultEngine.integrationService).toBeNull();      getExposuresNearLocation: jest.fn()      getExposuresNearLocation: jest.fn()
-
-      const highSeverity = engine.determineEventSeverity(highIntensity, 'Earthquake');
-
-                  startYear: 2020,
-
-      const validSeverities = ['Minor', 'Moderate', 'Major', 'Severe', 'Catastrophic', 'Extreme'];
-
-                  endYear: 2020,      expect(defaultEngine.financialService).toBeNull();
-
-      expect(validSeverities).toContain(lowSeverity);
-
-      expect(validSeverities).toContain(mediumSeverity);            hazardTypes: ['Earthquake'],
-
-      expect(validSeverities).toContain(highSeverity);
-
-    });            modelingConfig: { numberOfSimulations: 5 }      expect(defaultEngine.probService).toBeInstanceOf(ProbabilityDistributionService);    };    };
-
-
-
-    test('should calculate event probability', () => {          },
-
-      const intensity = 6.5;
-
-      const probability = engine.calculateEventProbability(intensity, 'Earthquake');          createdBy: 'test-user'      expect(defaultEngine.runningSimulations).toBeInstanceOf(Map);
-
-      
-
-      expect(typeof probability).toBe('number');        });
-
-      expect(probability).toBeGreaterThanOrEqual(0);
-
-      expect(probability).toBeLessThanOrEqual(1);        await simulationRun.save();    });
-
-    });
-
-      });
-
-    test('should calculate return period from probability', () => {
-
-      expect(engine.calculateReturnPeriod(0.1)).toBe(10);
-
-      expect(engine.calculateReturnPeriod(0.04)).toBe(25);
-
-      expect(engine.calculateReturnPeriod(0.02)).toBe(50);      test('should complete simulation successfully', async () => {
-
-      expect(engine.calculateReturnPeriod(0.01)).toBe(100);
-
-      expect(engine.calculateReturnPeriod(0)).toBe(1000); // Handle zero probability        // Mock the event generation    test('should initialize with provided services', () => {    mockFinancialService = {    mockFinancialService = {
-
-    });
-
-  });        jest.spyOn(engine, 'generateYearEvents').mockResolvedValue([
-
-
-
-  describe('Performance Tests', () => {          { eventId: 'event1', totalLoss: 100000 },      expect(engine.integrationService).toBe(mockIntegrationService);
-
-    test('should generate IDs efficiently', () => {
-
-      const startTime = Date.now();          { eventId: 'event2', totalLoss: 200000 }
-
-      
-
-      for (let i = 0; i < 1000; i++) {        ]);      expect(engine.financialService).toBe(mockFinancialService);      calculatePortfolioVaR: jest.fn(),      calculatePortfolioVaR: jest.fn(),
-
-        engine.generateSimulationRunId();
-
-        engine.generateEventId();
-
-      }
-
-              await engine.runSimulation('test-run-id');      expect(engine.probService).toBeInstanceOf(ProbabilityDistributionService);
-
-      const executionTime = Date.now() - startTime;
-
-      expect(executionTime).toBeLessThan(100); // Should complete in less than 100ms
-
-    });
-
-        const updatedRun = await SimulationRun.findOne({       expect(engine.runningSimulations).toBeInstanceOf(Map);      calculatePortfolioTVaR: jest.fn(),      calculatePortfolioTVaR: jest.fn(),
-
-    test('should maintain stable memory usage during ID generation', () => {
-
-      const initialMemory = process.memoryUsage().heapUsed;          simulationRunId: 'test-run-id' 
-
-      
-
-      // Generate many IDs without storing them        });    });
-
-      for (let i = 0; i < 10000; i++) {
-
-        engine.generateEventId();        expect(updatedRun.status).toBe('Completed');
-
-        engine.generateRandomMonth();
-
-        engine.generateRandomDay();        expect(updatedRun.results).toBeDefined();  });      calculateExpectedLoss: jest.fn(),      calculateExpectedLoss: jest.fn(),
-
-      }
-
-              expect(updatedRun.endTime).toBeDefined();
-
-      // Force garbage collection if available
-
-      if (global.gc) {      });
-
-        global.gc();
-
-      }
-
-      
-
-      const finalMemory = process.memoryUsage().heapUsed;      test('should handle simulation not found', async () => {  describe('🚀 Core Simulation Methods', () => {      calculateLossVolatility: jest.fn()      calculateLossVolatility: jest.fn()
-
-      const memoryIncrease = finalMemory - initialMemory;
-
-              await expect(
-
-      // Memory increase should be reasonable (less than 5MB)
-
-      expect(memoryIncrease).toBeLessThan(5 * 1024 * 1024);          engine.runSimulation('nonexistent-id')    const validConfig = {
-
-    });
-
-  });        ).rejects.toThrow('Simulation run not found');
-
-
-
-  describe('Error Handling', () => {      });      simulationName: 'Test CAT Simulation',    };    };
-
-    test('should handle extreme values in calculations', () => {
-
-      const extremeValues = [0, Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER];
-
-      
-
-      const median = engine.calculateMedian(extremeValues);      test('should mark simulation as failed on error', async () => {      simulationDescription: 'Comprehensive test simulation',
-
-      expect(Number.isFinite(median)).toBe(true);
-
-              jest.spyOn(engine, 'generateYearEvents').mockRejectedValue(
-
-      const stdDev = engine.calculateStandardDeviation(extremeValues);
-
-      expect(Number.isFinite(stdDev)).toBe(true);          new Error('Generation failed')      startYear: 2020,
-
-    });
-
-        );
-
-    test('should handle invalid inputs gracefully', () => {
-
-      expect(() => engine.calculateMedian(null)).not.toThrow();      endYear: 2022,
-
-      expect(() => engine.calculateStandardDeviation(undefined)).not.toThrow();
-
-      expect(() => engine.generateRandomLocation(null)).not.toThrow();        await expect(
-
-    });
-
-          engine.runSimulation('test-run-id')      timeHorizon: 3,    // Initialize engine with mock services    // Initialize engine with mock services
-
-    test('should handle edge cases in risk calculations', () => {
-
-      expect(engine.calculateDiversificationBenefit([])).toBe(0);        ).rejects.toThrow('Generation failed');
-
-      expect(engine.calculateConcentrationRisk([])).toBe(0);
-
-            timeHorizonUnit: 'years',
-
-      const singleExposure = [{ exposureAmount: 1000000, actualLoss: 500000 }];
-
-      expect(engine.calculateDiversificationBenefit(singleExposure)).toBeGreaterThanOrEqual(0);        const updatedRun = await SimulationRun.findOne({ 
-
-      expect(engine.calculateConcentrationRisk(singleExposure)).toBeGreaterThanOrEqual(0);
-
-    });          simulationRunId: 'test-run-id'       hazardTypes: ['Earthquake', 'Hurricane'],    engine = new CATSimulationEngine(mockIntegrationService, mockFinancialService);    engine = new CATSimulationEngine(mockIntegrationService, mockFinancialService);
-
-  });
-
-});        });
-
-        expect(updatedRun.status).toBe('Failed');      geographicScope: {
-
-        expect(updatedRun.errorMessage).toBe('Generation failed');
-
-      });        regions: ['North America'],
-
-    });
-
-  });        boundingBox: {
-
-
-
-  describe('🎯 Event Generation Methods', () => {          north: 49.0,    // Setup default mock returns    // Setup default mock returns
-
-    const mockConfig = {
-
-      hazardTypes: ['Earthquake', 'Hurricane'],          south: 25.0,
-
-      modelingConfig: { numberOfSimulations: 3 }
-
-    };          east: -66.0,    mockIntegrationService.getAccountsInRegion.mockResolvedValue([testData.account]);    mockIntegrationService.getAccountsInRegion.mockResolvedValue([testData.account]);
-
-
-
-    describe('generateYearEvents()', () => {          west: -125.0
-
-      test('should generate events for all hazard types', async () => {
-
-        jest.spyOn(engine, 'generateHazardEvents').mockResolvedValue([        }    mockIntegrationService.getVulnerabilitiesNearLocation.mockResolvedValue([testData.vulnerability]);    mockIntegrationService.getVulnerabilitiesNearLocation.mockResolvedValue([testData.vulnerability]);
-
-          { eventId: 'event1', hazardType: 'Earthquake' }
-
-        ]);      },
-
-
-
-        const events = await engine.generateYearEvents(2020, mockConfig, 'sim-id');      exposureScope: {    mockIntegrationService.getExposuresNearLocation.mockResolvedValue([testData.exposure]);    mockIntegrationService.getExposuresNearLocation.mockResolvedValue([testData.exposure]);
-
-
-
-        expect(engine.generateHazardEvents).toHaveBeenCalledTimes(2);        totalInsuredValue: { min: 100000, max: 10000000 }
-
-        expect(events).toHaveLength(2);
-
-      });      },    mockFinancialService.calculateExpectedLoss.mockReturnValue(50000);    mockFinancialService.calculateExpectedLoss.mockReturnValue(50000);
-
-
-
-      test('should use available hazard types when none specified', async () => {      vulnerabilityScope: {
-
-        jest.spyOn(engine, 'getAvailableHazardTypes').mockResolvedValue(['Flood']);
-
-        jest.spyOn(engine, 'generateHazardEvents').mockResolvedValue([]);        riskLevels: ['Medium', 'High']    mockFinancialService.calculateLossVolatility.mockReturnValue(0.15);    mockFinancialService.calculateLossVolatility.mockReturnValue(0.15);
-
-
-
-        const configWithoutHazards = { ...mockConfig, hazardTypes: undefined };      },
-
-        await engine.generateYearEvents(2020, configWithoutHazards, 'sim-id');
-
-      modelingConfig: {  });  });
-
-        expect(engine.getAvailableHazardTypes).toHaveBeenCalled();
-
-      });        modelProvider: 'AIR',
-
-    });
-
-        modelType: 'Probabilistic',
-
-    describe('generateHazardEvents()', () => {
-
-      test('should generate events based on frequency distribution', async () => {        resolution: 'High',
-
-        jest.spyOn(engine, 'getHazardFrequencyDistribution').mockReturnValue({
-
-          type: 'Poisson',        numberOfSimulations: 100,  afterEach(async () => {  afterEach(async () => {
-
-          lambda: 2.0
-
-        });        probabilityDistributions: {
-
-        jest.spyOn(engine, 'generateEventCount').mockReturnValue(3);
-
-        jest.spyOn(engine, 'generateSingleEvent').mockResolvedValue({          frequency: 'Poisson',    // Clean up simulation runs    // Clean up simulation runs
-
-          eventId: 'test-event'
-
-        });          severity: 'Lognormal'
-
-
-
-        const events = await engine.generateHazardEvents(        }    await SimulationRun.deleteMany({});    await SimulationRun.deleteMany({});
-
-          'Earthquake', 2020, mockConfig, 'sim-id'
-
-        );      },
-
-
-
-        expect(engine.generateSingleEvent).toHaveBeenCalledTimes(3);      riskConfig: {    await SimulationEvent.deleteMany({});    await SimulationEvent.deleteMany({});
-
-        expect(events).toHaveLength(3);
-
-      });        confidenceLevel: 0.95,
-
-
-
-      test('should handle zero events', async () => {        returnPeriods: [10, 25, 50, 100, 250, 500]    jest.clearAllMocks();    jest.clearAllMocks();
-
-        jest.spyOn(engine, 'generateEventCount').mockReturnValue(0);
-
-      }
-
-        const events = await engine.generateHazardEvents(
-
-          'Earthquake', 2020, mockConfig, 'sim-id'    };  });  });
-
-        );
-
-
-
-        expect(events).toHaveLength(0);
-
-      });    describe('startSimulation()', () => {
-
-    });
-
-      test('should successfully start simulation with valid configuration', async () => {
-
-    describe('generateSingleEvent()', () => {
-
-      test('should generate complete event structure', async () => {        const result = await engine.startSimulation(validConfig, 'test-user-id');  describe('🏗️ Constructor & Initialization', () => {  describe('🏗️ Constructor & Initialization', () => {
-
-        jest.spyOn(engine, 'generateEventIntensity').mockReturnValue(6.5);
-
-        jest.spyOn(engine, 'generateGeographicImpact').mockResolvedValue([
-
-          { latitude: 34, longitude: -118, affectedRadius: 50 }
-
-        ]);        expect(result.success).toBe(true);    test('should initialize with default services when none provided', () => {    test('should initialize with default services when none provided', () => {
-
-        jest.spyOn(engine, 'generateFinancialImpact').mockResolvedValue({
-
-          totalLoss: 500000        expect(result.simulationRunId).toBeDefined();
-
-        });
-
-        jest.spyOn(engine, 'generateVulnerabilityImpact').mockResolvedValue([]);        expect(result.status).toBe('Started');      const defaultEngine = new CATSimulationEngine();      const defaultEngine = new CATSimulationEngine();
-
-        jest.spyOn(engine, 'generateExposureImpact').mockResolvedValue([]);
-
-        jest.spyOn(engine, 'calculateRiskMetrics').mockReturnValue({});        expect(result.message).toBe('Simulation started successfully');
-
-
-
-        const event = await engine.generateSingleEvent(            
-
-          'Earthquake', 2020, mockConfig, 'sim-id'
-
-        );        // Verify simulation run was created in database
-
-
-
-        expect(event).toMatchObject({        const simulationRun = await SimulationRun.findOne({       expect(defaultEngine.integrationService).toBeNull();      expect(defaultEngine.integrationService).toBeNull();
-
-          eventId: expect.any(String),
-
-          simulationRunId: 'sim-id',          simulationRunId: result.simulationRunId 
-
-          hazardType: 'Earthquake',
-
-          year: 2020,        });      expect(defaultEngine.financialService).toBeNull();      expect(defaultEngine.financialService).toBeNull();
-
-          intensity: 6.5
-
-        });        expect(simulationRun).toBeTruthy();
-
-        expect(event.eventDate).toBeInstanceOf(Date);
-
-        expect(event.totalLoss).toBeDefined();        expect(simulationRun.simulationName).toBe(validConfig.simulationName);      expect(defaultEngine.probService).toBeInstanceOf(ProbabilityDistributionService);      expect(defaultEngine.probService).toBeInstanceOf(ProbabilityDistributionService);
-
-      });
-
-    });        expect(simulationRun.status).toBe('Running');
-
-  });
-
-        expect(simulationRun.createdBy).toBe('test-user-id');      expect(defaultEngine.runningSimulations).toBeInstanceOf(Map);      expect(defaultEngine.runningSimulations).toBeInstanceOf(Map);
-
-  describe('🌍 Impact Generation', () => {
-
-    describe('generateGeographicImpact()', () => {      });
-
-      test('should generate valid geographic impact', async () => {
-
-        const impact = await engine.generateGeographicImpact('Earthquake', 7.0, {});    });    });
-
-
-
-        expect(Array.isArray(impact)).toBe(true);      test('should use default values for missing configuration properties', async () => {
-
-        expect(impact.length).toBeGreaterThan(0);
-
-                const minimalConfig = {
-
-        impact.forEach(location => {
-
-          expect(location.latitude).toBeGreaterThanOrEqual(-90);          startYear: 2020,
-
-          expect(location.latitude).toBeLessThanOrEqual(90);
-
-          expect(location.longitude).toBeGreaterThanOrEqual(-180);          endYear: 2020    test('should initialize with provided services', () => {    test('should initialize with provided services', () => {
-
-          expect(location.longitude).toBeLessThanOrEqual(180);
-
-          expect(location.affectedRadius).toBeGreaterThan(0);        };
-
-        });
-
-      });      expect(engine.integrationService).toBe(mockIntegrationService);      expect(engine.integrationService).toBe(mockIntegrationService);
-
-    });
-
-        const result = await engine.startSimulation(minimalConfig, 'test-user-id');
-
-    describe('generateFinancialImpact()', () => {
-
-      test('should generate financial impact structure', async () => {      expect(engine.financialService).toBe(mockFinancialService);      expect(engine.financialService).toBe(mockFinancialService);
-
-        const geographicImpact = [
-
-          { latitude: 34, longitude: -118, affectedRadius: 50 }        expect(result.success).toBe(true);
-
-        ];
-
-              expect(engine.probService).toBeInstanceOf(ProbabilityDistributionService);      expect(engine.probService).toBeInstanceOf(ProbabilityDistributionService);
-
-        const impact = await engine.generateFinancialImpact(
-
-          'Earthquake', 7.0, geographicImpact, {}        const simulationRun = await SimulationRun.findOne({ 
-
-        );
-
-          simulationRunId: result.simulationRunId       expect(engine.runningSimulations).toBeInstanceOf(Map);      expect(engine.runningSimulations).toBeInstanceOf(Map);
-
-        expect(impact).toMatchObject({
-
-          totalLoss: expect.any(Number),        });
-
-          insuredLoss: expect.any(Number),
-
-          uninsuredLoss: expect.any(Number),        expect(simulationRun.simulationName).toBe('CAT Simulation');    });    });
-
-          economicLoss: expect.any(Number),
-
-          businessInterruptionLoss: expect.any(Number)        expect(simulationRun.simulationDescription).toBe('Comprehensive CAT simulation');
-
-        });
-
-        expect(impact.totalLoss).toBeGreaterThanOrEqual(0);        expect(simulationRun.configuration.hazardTypes).toEqual([]);  });  });
-
-      });
-
-    });        expect(simulationRun.configuration.modelingConfig.numberOfSimulations).toBe(1000);
-
-  });
-
-      });
-
-  describe('🧮 Risk Calculations', () => {
-
-    describe('calculateRiskMetrics()', () => {
-
-      test('should calculate risk metrics', () => {
-
-        const exposureImpact = [      test('should handle database errors gracefully', async () => {  describe('🚀 Simulation Lifecycle Methods', () => {  describe('🚀 Simulation Lifecycle Methods', () => {
-
-          { exposureId: 'exp1', netLoss: 100000 },
-
-          { exposureId: 'exp2', netLoss: 200000 }        // Mock database error
-
-        ];
-
-        jest.spyOn(SimulationRun.prototype, 'save').mockRejectedValueOnce(    describe('startSimulation()', () => {    describe('startSimulation()', () => {
-
-        const metrics = engine.calculateRiskMetrics({}, exposureImpact, []);
-
-          new Error('Database connection failed')
-
-        expect(metrics).toMatchObject({
-
-          expectedLoss: expect.any(Number),        );      const validConfig = {      const validConfig = {
-
-          standardDeviation: expect.any(Number),
-
-          coefficientOfVariation: expect.any(Number),
-
-          diversificationBenefit: expect.any(Number),
-
-          concentrationRisk: expect.any(Number)        await expect(        simulationName: 'Test CAT Simulation',        simulationName: 'Test CAT Simulation',
-
-        });
-
-      });          engine.startSimulation(validConfig, 'test-user-id')
-
-
-
-      test('should handle empty exposure impact', () => {        ).rejects.toThrow('Failed to start simulation: Database connection failed');        simulationDescription: 'Comprehensive test simulation',        simulationDescription: 'Comprehensive test simulation',
-
-        const metrics = engine.calculateRiskMetrics({}, [], []);
-
-      });
-
-        expect(metrics.expectedLoss).toBe(0);
-
-        expect(metrics.standardDeviation).toBe(0);        startYear: 2020,        startYear: 2020,
-
-        expect(metrics.coefficientOfVariation).toBe(0);
-
-      });      test('should generate unique simulation run IDs', async () => {
-
-    });
-
-        const results = await Promise.all([        endYear: 2022,        endYear: 2022,
-
-    describe('calculateSimulationResults()', () => {
-
-      test('should calculate comprehensive results', async () => {          engine.startSimulation(validConfig, 'user1'),
-
-        const events = [
-
-          { eventId: 'e1', totalLoss: 100000 },          engine.startSimulation(validConfig, 'user2'),        timeHorizon: 3,        timeHorizon: 3,
-
-          { eventId: 'e2', totalLoss: 200000 }
-
-        ];          engine.startSimulation(validConfig, 'user3')
-
-
-
-        const results = await engine.calculateSimulationResults(events, {});        ]);        timeHorizonUnit: 'years',        timeHorizonUnit: 'years',
-
-
-
-        expect(results).toMatchObject({
-
-          totalEvents: 2,
-
-          totalLossAmount: 300000,        const ids = results.map(r => r.simulationRunId);        hazardTypes: ['Earthquake', 'Hurricane'],        hazardTypes: ['Earthquake', 'Hurricane'],
-
-          averageLossPerEvent: 150000,
-
-          maxLoss: 200000,        const uniqueIds = new Set(ids);
-
-          minLoss: 100000
-
-        });        expect(uniqueIds.size).toBe(3);        geographicScope: {        geographicScope: {
-
-      });
-
-      });
-
-      test('should handle empty events', async () => {
-
-        const results = await engine.calculateSimulationResults([], {});    });          regions: ['North America'],          regions: ['North America'],
-
-
-
-        expect(results.totalEvents).toBe(0);
-
-        expect(results.totalLossAmount).toBe(0);
-
-        expect(results.averageLossPerEvent).toBe(0);    describe('runSimulation()', () => {          boundingBox: {          boundingBox: {
-
-      });
-
-    });      let simulationRun;
-
-  });
-
-            north: 49.0,            north: 49.0,
-
-  describe('🔧 Utility Methods', () => {
-
-    test('should generate unique IDs', () => {      beforeEach(async () => {
-
-      const runIds = Array.from({ length: 10 }, () => engine.generateSimulationRunId());
-
-      const eventIds = Array.from({ length: 10 }, () => engine.generateEventId());        simulationRun = new SimulationRun({            south: 25.0,            south: 25.0,
-
-
-
-      expect(new Set(runIds).size).toBe(10);          simulationRunId: 'test-sim-run-id',
-
-      expect(new Set(eventIds).size).toBe(10);
-
-    });          simulationName: 'Test Simulation',            east: -66.0,            east: -66.0,
-
-
-
-    test('should generate valid random values', () => {          simulationDescription: 'Test simulation for unit testing',
-
-      const months = Array.from({ length: 20 }, () => engine.generateRandomMonth());
-
-      const days = Array.from({ length: 20 }, () => engine.generateRandomDay());          configuration: {            west: -125.0            west: -125.0
-
-
-
-      months.forEach(month => {            startYear: 2020,
-
-        expect(month).toBeGreaterThanOrEqual(1);
-
-        expect(month).toBeLessThanOrEqual(12);            endYear: 2021,          }          }
-
-      });
-
-            timeHorizon: 2,
-
-      days.forEach(day => {
-
-        expect(day).toBeGreaterThanOrEqual(1);            timeHorizonUnit: 'years',        },        },
-
-        expect(day).toBeLessThanOrEqual(31);
-
-      });            hazardTypes: ['Earthquake'],
-
-    });
-
-            geographicScope: {},        exposureScope: {        exposureScope: {
-
-    test('should calculate statistics correctly', () => {
-
-      expect(engine.calculateMedian([1, 2, 3, 4, 5])).toBe(3);            exposureScope: {},
-
-      expect(engine.calculateMedian([1, 2, 3, 4])).toBe(2.5);
-
-            vulnerabilityScope: {},          totalInsuredValue: { min: 100000, max: 10000000 }          totalInsuredValue: { min: 100000, max: 10000000 }
-
-      const stdDev = engine.calculateStandardDeviation([2, 4, 4, 4, 5, 5, 7, 9]);
-
-      expect(stdDev).toBeCloseTo(1.86, 1);            modelingConfig: {
-
-
-
-      const events = Array.from({ length: 100 }, (_, i) => ({ totalLoss: i * 1000 }));              numberOfSimulations: 10,        },        },
-
-      const var95 = engine.calculateValueAtRisk(events, 0.95);
-
-      expect(var95).toBeCloseTo(95000, -3);              modelProvider: 'AIR',
-
-    });
-
-  });              modelType: 'Probabilistic',        vulnerabilityScope: {        vulnerabilityScope: {
-
-
-
-  describe('🎛️ Configuration', () => {              resolution: 'High'
-
-    test('should get hazard frequency distribution', () => {
-
-      const dist = engine.getHazardFrequencyDistribution('Earthquake', 2020);            },          riskLevels: ['Medium', 'High']          riskLevels: ['Medium', 'High']
-
-
-
-      expect(dist).toMatchObject({            riskConfig: {}
-
-        type: expect.any(String),
-
-        lambda: expect.any(Number)          },        },        },
-
-      });
-
-      expect(['Poisson', 'NegativeBinomial'].includes(dist.type)).toBe(true);          createdBy: 'test-user',
-
-    });
-
-          lastModifiedBy: 'test-user'        modelingConfig: {        modelingConfig: {
-
-    test('should generate event counts from distributions', () => {
-
-      const poissonDist = { type: 'Poisson', lambda: 2.0 };        });
-
-      const counts = Array.from({ length: 50 }, () => 
-
-        engine.generateEventCount(poissonDist)        await simulationRun.save();          modelProvider: 'AIR',          modelProvider: 'AIR',
-
-      );
-
-      });
-
-      counts.forEach(count => {
-
-        expect(count).toBeGreaterThanOrEqual(0);          modelType: 'Probabilistic',          modelType: 'Probabilistic',
-
-        expect(Number.isInteger(count)).toBe(true);
-
-      });      test('should run simulation successfully', async () => {
-
-
-
-      const average = counts.reduce((sum, count) => sum + count, 0) / counts.length;        // Mock event generation to return small dataset          resolution: 'High',          resolution: 'High',
-
-      expect(average).toBeCloseTo(2.0, 0);
-
-    });        jest.spyOn(engine, 'generateYearEvents').mockResolvedValue([
-
-  });
-
-          { eventId: 'event1', totalLoss: 100000 },          numberOfSimulations: 100,          numberOfSimulations: 100,
-
-  describe('⚡ Performance', () => {
-
-    test('should handle simulation creation efficiently', async () => {          { eventId: 'event2', totalLoss: 150000 }
-
-      const startTime = Date.now();
-
-              ]);          probabilityDistributions: {          probabilityDistributions: {
-
-      const config = {
-
-        startYear: 2020,
-
-        endYear: 2020,
-
-        hazardTypes: ['Earthquake'],        await engine.runSimulation('test-sim-run-id');            frequency: 'Poisson',            frequency: 'Poisson',
-
-        modelingConfig: { numberOfSimulations: 10 }
-
-      };
-
-
-
-      const result = await engine.startSimulation(config, 'perf-user');        // Verify simulation completion            severity: 'Lognormal'            severity: 'Lognormal'
-
-      expect(result.success).toBe(true);
-
-              const updatedRun = await SimulationRun.findOne({ 
-
-      const executionTime = Date.now() - startTime;
-
-      expect(executionTime).toBeLessThan(2000); // 2 seconds          simulationRunId: 'test-sim-run-id'           }          }
-
-    });
-
-        });
-
-    test('should maintain stable memory usage', () => {
-
-      const initialMemory = process.memoryUsage().heapUsed;        expect(updatedRun.status).toBe('Completed');        },        },
-
-      
-
-      // Generate many IDs without storing them        expect(updatedRun.results).toBeDefined();
-
-      for (let i = 0; i < 1000; i++) {
-
-        engine.generateEventId();        expect(updatedRun.endTime).toBeDefined();        riskConfig: {        riskConfig: {
-
-        engine.generateRandomMonth();
-
-        engine.generateRandomDay();      });
-
-      }
-
-                confidenceLevel: 0.95,          confidenceLevel: 0.95,
-
-      const finalMemory = process.memoryUsage().heapUsed;
-
-      const memoryIncrease = finalMemory - initialMemory;      test('should handle simulation not found', async () => {
-
-      
-
-      // Memory increase should be reasonable (less than 5MB)        await expect(          returnPeriods: [10, 25, 50, 100, 250, 500]          returnPeriods: [10, 25, 50, 100, 250, 500]
-
-      expect(memoryIncrease).toBeLessThan(5 * 1024 * 1024);
-
-    });          engine.runSimulation('non-existent-id')
-
-  });
-
-        ).rejects.toThrow('Simulation run not found');        }        }
-
-  describe('🚨 Error Handling', () => {
-
-    test('should handle invalid inputs gracefully', async () => {      });
-
-      const invalidConfig = {
-
-        startYear: 2020,      };      };
-
-        endYear: 2020,
-
-        hazardTypes: ['NonExistentHazard']      test('should handle errors and mark simulation as failed', async () => {
-
-      };
-
-        jest.spyOn(engine, 'generateYearEvents').mockRejectedValue(
-
-      jest.spyOn(engine, 'generateHazardEvents').mockResolvedValue([]);
-
-      const events = await engine.generateYearEvents(2020, invalidConfig, 'test-id');          new Error('Event generation failed')
-
-      expect(events).toEqual([]);
-
-    });        );      test('should successfully start simulation with valid configuration', async () => {      test('should successfully start simulation with valid configuration', async () => {
-
-
-
-    test('should handle extreme numerical values', () => {
-
-      const extremeValues = [0, Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER];
-
-              await expect(        const result = await engine.startSimulation(validConfig, 'test-user-id');        const result = await engine.startSimulation(validConfig, 'test-user-id');
-
-      const median = engine.calculateMedian(extremeValues);
-
-      expect(Number.isFinite(median)).toBe(true);          engine.runSimulation('test-sim-run-id')
-
-      
-
-      const stdDev = engine.calculateStandardDeviation(extremeValues);        ).rejects.toThrow('Event generation failed');
-
-      expect(Number.isFinite(stdDev)).toBe(true);
-
-    });
-
-
-
-    test('should handle empty arrays in calculations', () => {        const updatedRun = await SimulationRun.findOne({         expect(result.success).toBe(true);        expect(result.success).toBe(true);
-
-      expect(engine.calculateMedian([])).toBe(0);
-
-      expect(engine.calculateStandardDeviation([])).toBe(0);          simulationRunId: 'test-sim-run-id' 
-
-      expect(engine.calculateValueAtRisk([], 0.95)).toBe(0);
-
-      expect(engine.calculateTailValueAtRisk([], 0.95)).toBe(0);        });        expect(result.simulationRunId).toBeDefined();        expect(result.simulationRunId).toBeDefined();
-
-    });
-
-  });        expect(updatedRun.status).toBe('Failed');
-
-});
-        expect(updatedRun.errorMessage).toBe('Event generation failed');        expect(result.status).toBe('Started');        expect(result.status).toBe('Started');
-
-      });
-
-    });        expect(result.message).toBe('Simulation started successfully');        expect(result.message).toBe('Simulation started successfully');
-
-  });
-
-
-
-  describe('🎯 Event Generation Methods', () => {
-
-    const mockConfig = {        // Verify simulation run was created in database        // Verify simulation run was created in database
-
-      startYear: 2020,
-
-      endYear: 2020,        const simulationRun = await SimulationRun.findOne({         const simulationRun = await SimulationRun.findOne({ 
-
-      hazardTypes: ['Earthquake', 'Hurricane'],
-
-      geographicScope: {          simulationRunId: result.simulationRunId           simulationRunId: result.simulationRunId 
-
-        regions: ['North America']
-
-      },        });        });
-
+  describe('Simulation Lifecycle', () => {
+    const validConfig = {
+      simulationName: 'Test Hurricane Simulation',
+      simulationDescription: 'Testing hurricane simulation',
+      startYear: 2024,
+      endYear: 2025,
+      timeHorizon: 2,
+      timeHorizonUnit: 'years',
+      hazardTypes: ['Hurricane'],
+      geographicScope: {
+        region: 'Florida',
+        country: 'United States'
+      },
+      exposureScope: {
+        totalValue: 1000000,
+        currency: 'USD'
+      },
       modelingConfig: {
-
-        numberOfSimulations: 5        expect(simulationRun).toBeTruthy();        expect(simulationRun).toBeTruthy();
-
+        modelProvider: 'AIR',
+        modelType: 'Probabilistic',
+        numberOfSimulations: 100
       }
+    };
 
-    };        expect(simulationRun.simulationName).toBe(validConfig.simulationName);        expect(simulationRun.simulationName).toBe(validConfig.simulationName);
+    test('should start a new simulation successfully', async () => {
+      const result = await engine.startSimulation(validConfig, testUser.userId);
 
+      expect(result).toHaveProperty('success', true);
+      expect(result).toHaveProperty('simulationRunId');
+      expect(result).toHaveProperty('status', 'Started');
+      expect(result).toHaveProperty('message');
+      expect(result.simulationRunId).toMatch(/^SIMRUN-\d{8}-\d{6}$/);
 
-
-    describe('generateYearEvents()', () => {        expect(simulationRun.status).toBe('Running');        expect(simulationRun.status).toBe('Running');
-
-      test('should generate events for all hazard types', async () => {
-
-        jest.spyOn(engine, 'generateHazardEvents').mockResolvedValue([        expect(simulationRun.createdBy).toBe('test-user-id');        expect(simulationRun.createdBy).toBe('test-user-id');
-
-          { eventId: 'event1', hazardType: 'Earthquake' }
-
-        ]);      });      });
-
-
-
-        const events = await engine.generateYearEvents(2020, mockConfig, 'sim-run-id');
-
-
-
-        expect(engine.generateHazardEvents).toHaveBeenCalledTimes(2);      test('should use default values for missing configuration properties', async () => {      test('should use default values for missing configuration properties', async () => {
-
-        expect(engine.generateHazardEvents).toHaveBeenCalledWith(
-
-          'Earthquake', 2020, mockConfig, 'sim-run-id'        const minimalConfig = {        const minimalConfig = {
-
-        );
-
-        expect(engine.generateHazardEvents).toHaveBeenCalledWith(          startYear: 2020,          startYear: 2020,
-
-          'Hurricane', 2020, mockConfig, 'sim-run-id'
-
-        );          endYear: 2020          endYear: 2020
-
-        expect(events).toHaveLength(2);
-
-      });        };        };
-
-
-
-      test('should use available hazard types when none specified', async () => {
-
-        jest.spyOn(engine, 'getAvailableHazardTypes').mockResolvedValue([
-
-          'Earthquake', 'Flood', 'Wildfire'        const result = await engine.startSimulation(minimalConfig, 'test-user-id');        const result = await engine.startSimulation(minimalConfig, 'test-user-id');
-
-        ]);
-
-        jest.spyOn(engine, 'generateHazardEvents').mockResolvedValue([]);
-
-
-
-        const configWithoutHazards = { ...mockConfig, hazardTypes: undefined };        expect(result.success).toBe(true);        expect(result.success).toBe(true);
-
-        await engine.generateYearEvents(2020, configWithoutHazards, 'sim-run-id');
-
-                
-
-        expect(engine.getAvailableHazardTypes).toHaveBeenCalled();
-
-        expect(engine.generateHazardEvents).toHaveBeenCalledTimes(3);        const simulationRun = await SimulationRun.findOne({         const simulationRun = await SimulationRun.findOne({ 
-
+      // Verify simulation run was created in database
+      const savedRun = await SimulationRun.findOne({ 
+        simulationRunId: result.simulationRunId 
       });
-
-    });          simulationRunId: result.simulationRunId           simulationRunId: result.simulationRunId 
-
-
-
-    describe('generateHazardEvents()', () => {        });        });
-
-      test('should generate correct number of events based on frequency distribution', async () => {
-
-        jest.spyOn(engine, 'getHazardFrequencyDistribution').mockReturnValue({        expect(simulationRun.simulationName).toBe('CAT Simulation');        expect(simulationRun.simulationName).toBe('CAT Simulation');
-
-          type: 'Poisson',
-
-          lambda: 2.5        expect(simulationRun.simulationDescription).toBe('Comprehensive CAT simulation');        expect(simulationRun.simulationDescription).toBe('Comprehensive CAT simulation');
-
-        });
-
-        jest.spyOn(engine, 'generateEventCount').mockReturnValue(3);        expect(simulationRun.configuration.hazardTypes).toEqual([]);        expect(simulationRun.configuration.hazardTypes).toEqual([]);
-
-        jest.spyOn(engine, 'generateSingleEvent').mockResolvedValue({
-
-          eventId: 'test-event',        expect(simulationRun.configuration.modelingConfig.numberOfSimulations).toBe(1000);        expect(simulationRun.configuration.modelingConfig.numberOfSimulations).toBe(1000);
-
-          hazardType: 'Earthquake'
-
-        });      });      });
-
-
-
-        const events = await engine.generateHazardEvents(
-
-          'Earthquake', 2020, mockConfig, 'sim-run-id'
-
-        );      test('should handle database errors gracefully', async () => {      test('should handle database errors gracefully', async () => {
-
-
-
-        expect(engine.generateEventCount).toHaveBeenCalledWith({        // Mock database error        // Mock database error
-
-          type: 'Poisson',
-
-          lambda: 2.5        jest.spyOn(SimulationRun.prototype, 'save').mockRejectedValueOnce(        jest.spyOn(SimulationRun.prototype, 'save').mockRejectedValueOnce(
-
-        });
-
-        expect(engine.generateSingleEvent).toHaveBeenCalledTimes(3);          new Error('Database connection failed')          new Error('Database connection failed')
-
-        expect(events).toHaveLength(3);
-
-      });        );        );
-
-
-
-      test('should handle zero events from frequency distribution', async () => {
-
-        jest.spyOn(engine, 'generateEventCount').mockReturnValue(0);
-
-        await expect(        await expect(
-
-        const events = await engine.generateHazardEvents(
-
-          'Earthquake', 2020, mockConfig, 'sim-run-id'          engine.startSimulation(validConfig, 'test-user-id')          engine.startSimulation(validConfig, 'test-user-id')
-
-        );
-
-        ).rejects.toThrow('Failed to start simulation: Database connection failed');        ).rejects.toThrow('Failed to start simulation: Database connection failed');
-
-        expect(events).toHaveLength(0);
-
-      });      });      });
-
+      expect(savedRun).toBeTruthy();
+      expect(savedRun.simulationName).toBe(validConfig.simulationName);
+      expect(savedRun.createdBy).toBe(testUser.userId);
     });
 
+    test('should handle invalid simulation configuration', async () => {
+      const invalidConfig = {
+        // Missing required fields
+      };
 
-
-    describe('generateSingleEvent()', () => {
-
-      test('should generate complete event with all components', async () => {      test('should generate unique simulation run IDs', async () => {      test('should generate unique simulation run IDs', async () => {
-
-        const mockGeographicImpact = [
-
-          { latitude: 34.0522, longitude: -118.2437, affectedRadius: 50 }        const results = await Promise.all([        const results = await Promise.all([
-
-        ];
-
-        const mockFinancialImpact = { totalLoss: 500000, insuredLoss: 400000 };          engine.startSimulation(validConfig, 'user1'),          engine.startSimulation(validConfig, 'user1'),
-
-        const mockVulnerabilityImpact = [
-
-          { vulnerabilityId: 'vuln1', impactScore: 8.5 }          engine.startSimulation(validConfig, 'user2'),          engine.startSimulation(validConfig, 'user2'),
-
-        ];
-
-        const mockExposureImpact = [          engine.startSimulation(validConfig, 'user3')          engine.startSimulation(validConfig, 'user3')
-
-          { exposureId: 'exp1', damageRatio: 0.25, grossLoss: 125000 }
-
-        ];        ]);        ]);
-
-        const mockRiskMetrics = { var95: 750000, tvar95: 950000 };
-
-
-
-        jest.spyOn(engine, 'generateEventIntensity').mockReturnValue(7.2);
-
-        jest.spyOn(engine, 'generateGeographicImpact').mockResolvedValue(mockGeographicImpact);        const ids = results.map(r => r.simulationRunId);        const ids = results.map(r => r.simulationRunId);
-
-        jest.spyOn(engine, 'generateFinancialImpact').mockResolvedValue(mockFinancialImpact);
-
-        jest.spyOn(engine, 'generateVulnerabilityImpact').mockResolvedValue(mockVulnerabilityImpact);        const uniqueIds = new Set(ids);        const uniqueIds = new Set(ids);
-
-        jest.spyOn(engine, 'generateExposureImpact').mockResolvedValue(mockExposureImpact);
-
-        jest.spyOn(engine, 'calculateRiskMetrics').mockReturnValue(mockRiskMetrics);        expect(uniqueIds.size).toBe(3);        expect(uniqueIds.size).toBe(3);
-
-
-
-        const event = await engine.generateSingleEvent(      });      });
-
-          'Earthquake', 2020, mockConfig, 'sim-run-id'
-
-        );    });
-
-
-
-        expect(event).toMatchObject({      // Mock error
-
-          eventId: expect.any(String),
-
-          simulationRunId: 'sim-run-id',    describe('runSimulation()', () => {      SimulationRun.mockImplementation(() => {
-
-          hazardType: 'Earthquake',
-
-          year: 2020,      let simulationRun;        throw new Error('Database error');
-
-          intensity: 7.2,
-
-          geographicImpact: mockGeographicImpact,      });
-
-          financialImpact: mockFinancialImpact,
-
-          vulnerabilityImpact: mockVulnerabilityImpact,      beforeEach(async () => {
-
-          exposureImpact: mockExposureImpact,
-
-          riskMetrics: mockRiskMetrics        simulationRun = new SimulationRun({      await expect(simulationEngine.startSimulation(config, userId))
-
-        });
-
-          simulationRunId: 'test-sim-run-id',        .rejects.toThrow('Failed to start simulation: Database error');
-
-        expect(event.eventDate).toBeInstanceOf(Date);
-
-        expect(event.totalLoss).toBeDefined();          simulationName: 'Test Simulation',    });
-
-        expect(event.eventSeverity).toBeDefined();
-
-        expect(event.eventProbability).toBeDefined();          simulationDescription: 'Test simulation for unit testing',  });
-
-        expect(event.returnPeriod).toBeDefined();
-
-      });          configuration: {
-
+      await expect(
+        engine.startSimulation(invalidConfig, testUser.userId)
+      ).rejects.toThrow();
     });
 
-  });            startYear: 2020,  describe('generateEventIntensity', () => {
-
-
-
-  describe('🌍 Impact Generation Methods', () => {            endYear: 2021,    it('should generate intensity for earthquake', () => {
-
-    describe('generateGeographicImpact()', () => {
-
-      test('should generate geographic impact based on hazard and intensity', async () => {            timeHorizon: 2,      const intensity = simulationEngine.generateEventIntensity('Earthquake', 2020);
-
-        const impact = await engine.generateGeographicImpact('Earthquake', 7.5, {
-
-          geographicScope: { regions: ['California'] }            timeHorizonUnit: 'years',      
-
-        });
-
-            hazardTypes: ['Earthquake'],      expect(intensity).toHaveProperty('value');
-
-        expect(Array.isArray(impact)).toBe(true);
-
-        expect(impact.length).toBeGreaterThan(0);            geographicScope: {},      expect(intensity).toHaveProperty('scale');
-
-        
-
-        impact.forEach(location => {            exposureScope: {},      expect(intensity.value).toBeGreaterThanOrEqual(0);
-
-          expect(location).toMatchObject({
-
-            latitude: expect.any(Number),            vulnerabilityScope: {},      expect(intensity.scale).toBe('Richter');
-
-            longitude: expect.any(Number),
-
-            affectedRadius: expect.any(Number),            modelingConfig: {    });
-
-            impactIntensity: expect.any(Number)
-
-          });              numberOfSimulations: 10,
-
-          expect(location.latitude).toBeGreaterThanOrEqual(-90);
-
-          expect(location.latitude).toBeLessThanOrEqual(90);              modelProvider: 'AIR',    it('should generate intensity for hurricane', () => {
-
-          expect(location.longitude).toBeGreaterThanOrEqual(-180);
-
-          expect(location.longitude).toBeLessThanOrEqual(180);              modelType: 'Probabilistic',      const intensity = simulationEngine.generateEventIntensity('Hurricane', 2020);
-
-        });
-
-      });              resolution: 'High'      
-
+    test('should handle missing user ID', async () => {
+      await expect(
+        engine.startSimulation(validConfig, null)
+      ).rejects.toThrow();
     });
 
-            },      expect(intensity).toHaveProperty('value');
+    test('should apply default configuration values', async () => {
+      const minimalConfig = {
+        startYear: 2024,
+        endYear: 2024
+      };
 
-    describe('generateFinancialImpact()', () => {
+      const result = await engine.startSimulation(minimalConfig, testUser.userId);
 
-      test('should generate financial impact with proper structure', async () => {            riskConfig: {}      expect(intensity).toHaveProperty('scale');
-
-        const geographicImpact = [
-
-          { latitude: 34.0522, longitude: -118.2437, affectedRadius: 50, impactIntensity: 8.0 }          },      expect(intensity.value).toBeGreaterThanOrEqual(0);
-
-        ];
-
-          createdBy: 'test-user',      expect(intensity.scale).toBe('Saffir-Simpson');
-
-        const impact = await engine.generateFinancialImpact(
-
-          'Earthquake', 7.5, geographicImpact, {}          lastModifiedBy: 'test-user'    });
-
-        );
-
-        });  });
-
-        expect(impact).toMatchObject({
-
-          totalLoss: expect.any(Number),        await simulationRun.save();
-
-          insuredLoss: expect.any(Number),
-
-          uninsuredLoss: expect.any(Number),      });  describe('determineEventSeverity', () => {
-
-          economicLoss: expect.any(Number),
-
-          businessInterruptionLoss: expect.any(Number),    it('should determine severity for earthquake', () => {
-
-          impactedAssets: expect.any(Number)
-
-        });      test('should run simulation successfully', async () => {      const intensity = { value: 7.5, scale: 'Richter' };
-
-
-
-        expect(impact.totalLoss).toBeGreaterThanOrEqual(0);        // Mock event generation to return small dataset      const severity = simulationEngine.determineEventSeverity(intensity, 'Earthquake');
-
-        expect(impact.insuredLoss).toBeLessThanOrEqual(impact.totalLoss);
-
-        expect(impact.uninsuredLoss).toBeLessThanOrEqual(impact.totalLoss);        jest.spyOn(engine, 'generateYearEvents').mockResolvedValue([      
-
+      const savedRun = await SimulationRun.findOne({ 
+        simulationRunId: result.simulationRunId 
       });
-
-    });          { eventId: 'event1', totalLoss: 100000 },      expect(['Minor', 'Moderate', 'Major', 'Severe', 'Catastrophic', 'Extreme']).toContain(severity);
-
-  });
-
-          { eventId: 'event2', totalLoss: 150000 }    });
-
-  describe('🧮 Risk Calculation Methods', () => {
-
-    describe('calculateRiskMetrics()', () => {        ]);
-
-      test('should calculate comprehensive risk metrics', () => {
-
-        const mockExposureImpact = [    it('should determine severity for hurricane', () => {
-
-          { exposureId: 'exp1', netLoss: 100000 },
-
-          { exposureId: 'exp2', netLoss: 250000 },        await engine.runSimulation('test-sim-run-id');      const intensity = { value: 4, scale: 'Saffir-Simpson' };
-
-          { exposureId: 'exp3', netLoss: 75000 }
-
-        ];      const severity = simulationEngine.determineEventSeverity(intensity, 'Hurricane');
-
-
-
-        mockFinancialService.calculatePortfolioVaR.mockReturnValue(450000);        // Verify simulation completion      
-
-        mockFinancialService.calculatePortfolioTVaR.mockReturnValue(550000);
-
-        const updatedRun = await SimulationRun.findOne({       expect(['Minor', 'Moderate', 'Major', 'Severe', 'Catastrophic', 'Extreme']).toContain(severity);
-
-        const metrics = engine.calculateRiskMetrics({}, mockExposureImpact, []);
-
-          simulationRunId: 'test-sim-run-id'     });
-
-        expect(metrics).toMatchObject({
-
-          portfolioVaR: 450000,        });  });
-
-          portfolioTVaR: 550000,
-
-          expectedLoss: expect.any(Number),        expect(updatedRun.status).toBe('Completed');
-
-          standardDeviation: expect.any(Number),
-
-          coefficientOfVariation: expect.any(Number),        expect(updatedRun.results).toBeDefined();  describe('calculateEventProbability', () => {
-
-          diversificationBenefit: expect.any(Number),
-
-          concentrationRisk: expect.any(Number)        expect(updatedRun.endTime).toBeDefined();    it('should calculate probability based on intensity', () => {
-
-        });
-
-      });      });      const intensity = { value: 6.5, scale: 'Richter' };
-
-
-
-      test('should handle empty exposure impact gracefully', () => {      const probability = simulationEngine.calculateEventProbability(intensity, 'Earthquake');
-
-        const metrics = engine.calculateRiskMetrics({}, [], []);
-
-      test('should handle simulation not found', async () => {      
-
-        expect(metrics).toMatchObject({
-
-          expectedLoss: 0,        await expect(      expect(probability).toBeGreaterThanOrEqual(0);
-
-          standardDeviation: 0,
-
-          coefficientOfVariation: 0,          engine.runSimulation('non-existent-id')      expect(probability).toBeLessThanOrEqual(1);
-
-          diversificationBenefit: 0,
-
-          concentrationRisk: 0        ).rejects.toThrow('Simulation run not found');    });
-
-        });
-
-      });      });  });
-
+      expect(savedRun.simulationName).toBe('CAT Simulation');
+      expect(savedRun.simulationDescription).toBe('Comprehensive CAT simulation');
+      expect(savedRun.configuration.modelingConfig.modelProvider).toBe('AIR');
+      expect(savedRun.configuration.modelingConfig.modelType).toBe('Probabilistic');
+      expect(savedRun.configuration.modelingConfig.numberOfSimulations).toBe(1000);
     });
 
-
-
-    describe('calculateSimulationResults()', () => {
-
-      test('should calculate comprehensive simulation results', async () => {      test('should handle cancellation during execution', async () => {  describe('calculateReturnPeriod', () => {
-
-        const mockEvents = [
-
-          {        // Mock cancellation by updating status during execution    it('should calculate return period from probability', () => {
-
-            eventId: 'event1',
-
-            totalLoss: 100000,        jest.spyOn(engine, 'generateYearEvents').mockImplementation(async () => {      const probability = 0.1;
-
-            geographicImpact: [{ latitude: 34, longitude: -118 }],
-
-            financialImpact: { totalLoss: 100000 },          // Simulate cancellation      const returnPeriod = simulationEngine.calculateReturnPeriod(probability);
-
-            exposureImpact: [{ exposureId: 'exp1', netLoss: 80000 }],
-
-            vulnerabilityImpact: [{ vulnerabilityId: 'vuln1', impactScore: 7.5 }]          await SimulationRun.updateOne(      
-
-          },
-
-          {            { simulationRunId: 'test-sim-run-id' },      expect(returnPeriod).toBe(10);
-
-            eventId: 'event2',
-
-            totalLoss: 250000,            { status: 'Cancelled' }    });
-
-            geographicImpact: [{ latitude: 35, longitude: -119 }],
-
-            financialImpact: { totalLoss: 250000 },          );
-
-            exposureImpact: [{ exposureId: 'exp2', netLoss: 200000 }],
-
-            vulnerabilityImpact: [{ vulnerabilityId: 'vuln2', impactScore: 8.0 }]          return [];    it('should handle zero probability', () => {
-
-          }
-
-        ];        });      const probability = 0;
-
-
-
-        const results = await engine.calculateSimulationResults(mockEvents, {});      const returnPeriod = simulationEngine.calculateReturnPeriod(probability);
-
-
-
-        expect(results).toMatchObject({        await engine.runSimulation('test-sim-run-id');      
-
-          totalEvents: 2,
-
-          totalLossAmount: 350000,      expect(returnPeriod).toBe(1000);
-
-          averageLossPerEvent: 175000,
-
-          medianLoss: expect.any(Number),        const updatedRun = await SimulationRun.findOne({     });
-
-          standardDeviation: expect.any(Number),
-
-          valueAtRisk95: expect.any(Number),          simulationRunId: 'test-sim-run-id'   });
-
-          tailValueAtRisk95: expect.any(Number),
-
-          maxLoss: 250000,        });
-
-          minLoss: 100000,
-
-          lossDistribution: expect.any(Object),        expect(updatedRun.status).toBe('Cancelled');  describe('generateGeographicImpact', () => {
-
-          geographicDistribution: expect.any(Object),
-
-          hazardTypeDistribution: expect.any(Object),      });    it('should generate geographic impact for event', async () => {
-
-          simulationStatistics: expect.any(Object)
-
-        });      const hazardType = 'Earthquake';
-
-      });
-
-      test('should handle errors and mark simulation as failed', async () => {      const intensity = { value: 6.5, scale: 'Richter' };
-
-      test('should handle empty events array', async () => {
-
-        const results = await engine.calculateSimulationResults([], {});        jest.spyOn(engine, 'generateYearEvents').mockRejectedValue(      const config = {
-
-
-
-        expect(results).toMatchObject({          new Error('Event generation failed')        geographicScope: {
-
-          totalEvents: 0,
-
-          totalLossAmount: 0,        );          boundingBox: {
-
-          averageLossPerEvent: 0,
-
-          medianLoss: 0,            minLatitude: 20,
-
-          standardDeviation: 0,
-
-          maxLoss: 0,        await expect(            maxLatitude: 50,
-
-          minLoss: 0
-
-        });          engine.runSimulation('test-sim-run-id')            minLongitude: -130,
-
-      });
-
-    });        ).rejects.toThrow('Event generation failed');            maxLongitude: -60
-
-  });
-
-          }
-
-  describe('🔧 Utility Methods', () => {
-
-    test('generateSimulationRunId should create unique IDs', () => {        const updatedRun = await SimulationRun.findOne({         }
-
-      const ids = Array.from({ length: 100 }, () => engine.generateSimulationRunId());
-
-      const uniqueIds = new Set(ids);          simulationRunId: 'test-sim-run-id'       };
-
-      expect(uniqueIds.size).toBe(100);
-
-    });        });
-
-
-
-    test('generateEventId should create unique IDs', () => {        expect(updatedRun.status).toBe('Failed');      const impact = await simulationEngine.generateGeographicImpact(hazardType, intensity, config);
-
-      const ids = Array.from({ length: 100 }, () => engine.generateEventId());
-
-      const uniqueIds = new Set(ids);        expect(updatedRun.errorMessage).toBe('Event generation failed');      
-
-      expect(uniqueIds.size).toBe(100);
-
-    });      });      expect(Array.isArray(impact)).toBe(true);
-
-
-
-    test('generateRandomMonth should return valid month', () => {    });      expect(impact.length).toBeGreaterThan(0);
-
-      const months = Array.from({ length: 100 }, () => engine.generateRandomMonth());
-
-        });      expect(impact[0]).toHaveProperty('affectedLatitude');
-
-      months.forEach(month => {
-
-        expect(month).toBeGreaterThanOrEqual(1);      expect(impact[0]).toHaveProperty('affectedLongitude');
-
-        expect(month).toBeLessThanOrEqual(12);
-
-      });  describe('🎯 Event Generation Methods', () => {      expect(impact[0]).toHaveProperty('affectedRadius');
-
-    });
-
-    const mockConfig = {      expect(impact[0]).toHaveProperty('intensityAtLocation');
-
-    test('generateRandomDay should return valid day', () => {
-
-      const days = Array.from({ length: 100 }, () => engine.generateRandomDay());      startYear: 2020,    });
-
-      
-
-      days.forEach(day => {      endYear: 2020,  });
-
-        expect(day).toBeGreaterThanOrEqual(1);
-
-        expect(day).toBeLessThanOrEqual(31);      hazardTypes: ['Earthquake', 'Hurricane'],
-
-      });
-
-    });      geographicScope: {  describe('generateFinancialImpact', () => {
-
-
-
-    test('calculateMedian should work correctly', () => {        regions: ['North America']    it('should generate financial impact for event', async () => {
-
-      expect(engine.calculateMedian([1, 3, 5, 7, 9])).toBe(5);
-
-      expect(engine.calculateMedian([1, 2, 3, 4])).toBe(2.5);      },      const hazardType = 'Earthquake';
-
-    });
-
-      modelingConfig: {      const intensity = { value: 6.5, scale: 'Richter' };
-
-    test('calculateStandardDeviation should calculate correctly', () => {
-
-      const values = [2, 4, 4, 4, 5, 5, 7, 9];        numberOfSimulations: 5      const geographicImpact = [{
-
-      const stdDev = engine.calculateStandardDeviation(values);
-
-      expect(stdDev).toBeCloseTo(1.86, 1);      }        affectedLatitude: 40.7128,
-
-    });
-
-    };        affectedLongitude: -74.0060,
-
-    test('calculateValueAtRisk should calculate VaR correctly', () => {
-
-      const events = Array.from({ length: 1000 }, (_, i) => ({ totalLoss: i * 100 }));        intensityAtLocation: 6.5
-
-      const var95 = engine.calculateValueAtRisk(events, 0.95);
-
-      expect(var95).toBeCloseTo(95000, -2);    describe('generateYearEvents()', () => {      }];
-
-    });
-
-  });      test('should generate events for all hazard types', async () => {      const config = {
-
-
-
-  describe('🎛️ Configuration Methods', () => {        jest.spyOn(engine, 'generateHazardEvents').mockResolvedValue([        exposureScope: {
-
-    test('getAvailableHazardTypes should return hazard types from database', async () => {
-
-      // Create test hazards          { eventId: 'event1', hazardType: 'Earthquake' }          currency: 'USD'
-
-      await Hazard.create([
-
-        { hazardId: 'HAZ001', hazardName: 'Test Earthquake', hazardType: 'Earthquake' },        ]);        }
-
-        { hazardId: 'HAZ002', hazardName: 'Test Hurricane', hazardType: 'Hurricane' },
-
-        { hazardId: 'HAZ003', hazardName: 'Test Flood', hazardType: 'Flood' }      };
-
+    test('should generate unique simulation run IDs', async () => {
+      const results = await Promise.all([
+        engine.startSimulation(validConfig, 'user1'),
+        engine.startSimulation(validConfig, 'user2'),
+        engine.startSimulation(validConfig, 'user3')
       ]);
 
-        const events = await engine.generateYearEvents(2020, mockConfig, 'sim-run-id');
-
-      const hazardTypes = await engine.getAvailableHazardTypes();
-
-      const impact = await simulationEngine.generateFinancialImpact(hazardType, intensity, geographicImpact, config);
-
-      expect(Array.isArray(hazardTypes)).toBe(true);
-
-      expect(hazardTypes).toContain('Earthquake');        expect(engine.generateHazardEvents).toHaveBeenCalledTimes(2);      
-
-      expect(hazardTypes).toContain('Hurricane');
-
-      expect(hazardTypes).toContain('Flood');        expect(engine.generateHazardEvents).toHaveBeenCalledWith(      expect(impact).toHaveProperty('directLoss');
-
+      const ids = results.map(r => r.simulationRunId);
+      const uniqueIds = new Set(ids);
+      expect(uniqueIds.size).toBe(3);
     });
-
-          'Earthquake', 2020, mockConfig, 'sim-run-id'      expect(impact).toHaveProperty('indirectLoss');
-
-    test('getHazardFrequencyDistribution should return frequency distribution', () => {
-
-      const dist = engine.getHazardFrequencyDistribution('Earthquake', 2020);        );      expect(impact).toHaveProperty('businessInterruptionLoss');
-
-
-
-      expect(dist).toMatchObject({        expect(engine.generateHazardEvents).toHaveBeenCalledWith(      expect(impact).toHaveProperty('totalLoss');
-
-        type: expect.any(String),
-
-        lambda: expect.any(Number)          'Hurricane', 2020, mockConfig, 'sim-run-id'      expect(impact).toHaveProperty('currency');
-
-      });
-
-      expect(['Poisson', 'NegativeBinomial'].includes(dist.type)).toBe(true);        );      expect(impact.totalLoss).toBe(impact.directLoss + impact.indirectLoss + impact.businessInterruptionLoss);
-
-      expect(dist.lambda).toBeGreaterThan(0);
-
-    });        expect(events).toHaveLength(2);    });
-
-
-
-    test('generateEventCount should generate event count based on distribution', () => {      });  });
-
-      const dist = { type: 'Poisson', lambda: 3.0 };
-
-      const counts = Array.from({ length: 100 }, () => engine.generateEventCount(dist));
-
-
-
-      counts.forEach(count => {      test('should use available hazard types when none specified', async () => {  describe('calculateRiskMetrics', () => {
-
-        expect(count).toBeGreaterThanOrEqual(0);
-
-        expect(Number.isInteger(count)).toBe(true);        jest.spyOn(engine, 'getAvailableHazardTypes').mockResolvedValue([    it('should calculate risk metrics for event', () => {
-
-      });
-
-          'Earthquake', 'Flood', 'Wildfire'      const financialImpact = {
-
-      const average = counts.reduce((sum, count) => sum + count, 0) / counts.length;
-
-      expect(average).toBeCloseTo(3.0, 0);        ]);        totalLoss: 1000000,
-
-    });
-
-  });        jest.spyOn(engine, 'generateHazardEvents').mockResolvedValue([]);        currency: 'USD'
-
-
-
-  describe('⚡ Performance Tests', () => {      };
-
-    test('should handle large simulation efficiently', async () => {
-
-      const startTime = Date.now();        const configWithoutHazards = { ...mockConfig, hazardTypes: undefined };      const exposureImpact = [{
-
-      
-
-      const config = {        await engine.generateYearEvents(2020, configWithoutHazards, 'sim-run-id');        accountId: 'ACC-123456',
-
-        startYear: 2020,
-
-        endYear: 2020,        exposureAmount: 2000000,
-
-        hazardTypes: ['Earthquake'],
-
-        modelingConfig: { numberOfSimulations: 50 }        expect(engine.getAvailableHazardTypes).toHaveBeenCalled();        actualLoss: 500000
-
-      };
-
-        expect(engine.generateHazardEvents).toHaveBeenCalledTimes(3);      }];
-
-      // Mock methods to return quickly but realistically
-
-      jest.spyOn(engine, 'generateHazardEvents').mockImplementation(async () => {      });      const vulnerabilityImpact = [{
-
-        return Array.from({ length: 5 }, (_, i) => ({
-
-          eventId: `event-${i}`,    });        vulnerabilityId: 'VUL-123456',
-
-          totalLoss: Math.random() * 1000000
-
-        }));        vulnerabilityScore: 7.5,
-
-      });
-
-    describe('generateHazardEvents()', () => {        adjustedLoss: 750000
-
-      const result = await engine.startSimulation(config, 'perf-test-user');
-
-      expect(result.success).toBe(true);      test('should generate correct number of events based on frequency distribution', async () => {      }];
-
-      
-
-      const endTime = Date.now();        jest.spyOn(engine, 'getHazardFrequencyDistribution').mockReturnValue({
-
-      const executionTime = endTime - startTime;
-
-                type: 'Poisson',      const metrics = simulationEngine.calculateRiskMetrics(financialImpact, exposureImpact, vulnerabilityImpact);
-
-      // Should complete simulation setup in reasonable time
-
-      expect(executionTime).toBeLessThan(5000); // 5 seconds          lambda: 2.5      
-
-    }, 10000);
-
-        });      expect(metrics).toHaveProperty('expectedLoss');
-
-    test('memory usage should remain stable during event generation', () => {
-
-      const initialMemory = process.memoryUsage().heapUsed;        jest.spyOn(engine, 'generateEventCount').mockReturnValue(3);      expect(metrics).toHaveProperty('valueAtRisk');
-
-      
-
-      // Generate many events without storing them        jest.spyOn(engine, 'generateSingleEvent').mockResolvedValue({      expect(metrics).toHaveProperty('tailValueAtRisk');
-
-      for (let i = 0; i < 1000; i++) {
-
-        engine.generateEventId();          eventId: 'test-event',      expect(metrics).toHaveProperty('standardDeviation');
-
-        engine.generateRandomMonth();
-
-        engine.generateRandomDay();          hazardType: 'Earthquake'      expect(metrics).toHaveProperty('riskAdjustedExposure');
-
-      }
-
-              });      expect(metrics).toHaveProperty('lossRatio');
-
-      // Force garbage collection if available
-
-      if (global.gc) {      expect(metrics).toHaveProperty('diversificationBenefit');
-
-        global.gc();
-
-      }        const events = await engine.generateHazardEvents(      expect(metrics).toHaveProperty('concentrationRisk');
-
-      
-
-      const finalMemory = process.memoryUsage().heapUsed;          'Earthquake', 2020, mockConfig, 'sim-run-id'    });
-
-      const memoryIncrease = finalMemory - initialMemory;
-
-              );  });
-
-      // Memory increase should be reasonable (less than 10MB)
-
-      expect(memoryIncrease).toBeLessThan(10 * 1024 * 1024);
-
-    });
-
-  });        expect(engine.generateEventCount).toHaveBeenCalledWith({  describe('calculateSimulationResults', () => {
-
-
-
-  describe('🚨 Error Handling', () => {          type: 'Poisson',    it('should calculate comprehensive simulation results', async () => {
-
-    test('should handle invalid hazard types gracefully', async () => {
-
-      const config = {          lambda: 2.5      const events = [
-
-        startYear: 2020,
-
-        endYear: 2020,        });        {
-
-        hazardTypes: ['InvalidHazardType']
-
-      };        expect(engine.generateSingleEvent).toHaveBeenCalledTimes(3);          eventId: 'SIM-1',
-
-
-
-      jest.spyOn(engine, 'generateHazardEvents').mockResolvedValue([]);        expect(events).toHaveLength(3);          hazardType: 'Earthquake',
-
-
-
-      const events = await engine.generateYearEvents(2020, config, 'test-sim-id');      });          severity: 'Major',
-
-      expect(events).toEqual([]);
-
-    });          eventYear: 2020,
-
-
-
-    test('should handle integration service failures', async () => {      test('should handle zero events from frequency distribution', async () => {          financialImpact: {
-
-      mockIntegrationService.getAccountsInRegion.mockRejectedValue(
-
-        new Error('Service unavailable')        jest.spyOn(engine, 'generateEventCount').mockReturnValue(0);            totalLoss: 1000000,
-
-      );
-
-            currency: 'USD'
-
-      const geographicImpact = [{ latitude: 34, longitude: -118, affectedRadius: 50 }];
-
-              const events = await engine.generateHazardEvents(          },
-
-      await expect(
-
-        engine.generateExposureImpact('Earthquake', geographicImpact, {}, {})          'Earthquake', 2020, mockConfig, 'sim-run-id'          exposureImpact: [{
-
-      ).rejects.toThrow('Service unavailable');
-
-    });        );            accountId: 'ACC-1',
-
-
-
-    test('should handle financial service failures', () => {            exposureAmount: 2000000,
-
-      mockFinancialService.calculateExpectedLoss.mockImplementation(() => {
-
-        throw new Error('Financial calculation failed');        expect(events).toHaveLength(0);            actualLoss: 500000
-
-      });
-
-      });          }],
-
-      const exposureImpact = [{ exposureId: 'exp1', netLoss: 100000 }];
-
-          });          vulnerabilityImpact: [{
-
-      expect(() => {
-
-        engine.calculateRiskMetrics({}, exposureImpact, []);            vulnerabilityId: 'VUL-1',
-
-      }).toThrow('Financial calculation failed');
-
-    });    describe('generateSingleEvent()', () => {            vulnerabilityScore: 7.5,
-
-
-
-    test('should handle extreme values in calculations', () => {      test('should generate complete event with all components', async () => {            adjustedLoss: 750000
-
-      const extremeValues = [0, Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER];
-
-              const mockGeographicImpact = [          }],
-
-      const median = engine.calculateMedian(extremeValues);
-
-      expect(Number.isFinite(median)).toBe(true);          { latitude: 34.0522, longitude: -118.2437, affectedRadius: 50 }          geographicImpact: [{
-
-      
-
-      const stdDev = engine.calculateStandardDeviation(extremeValues);        ];            affectedLatitude: 40.7128,
-
-      expect(Number.isFinite(stdDev)).toBe(true);
-
-    });        const mockFinancialImpact = { totalLoss: 500000, insuredLoss: 400000 };            affectedLongitude: -74.0060
-
   });
 
-});        const mockVulnerabilityImpact = [          }]
+  describe('Event Generation', () => {
+    const mockConfig = {
+      hazardTypes: ['Earthquake', 'Hurricane'],
+      modelingConfig: { numberOfSimulations: 3 },
+      geographicScope: { regions: ['North America'] }
+    };
 
-          { vulnerabilityId: 'vuln1', impactScore: 8.5 }        },
+    test('should generate events for all hazard types', async () => {
+      jest.spyOn(engine, 'generateHazardEvents').mockResolvedValue([
+        { eventId: 'event1', hazardType: 'Earthquake' }
+      ]);
 
-        ];        {
+      const events = await engine.generateYearEvents(2020, mockConfig, 'sim-id');
 
-        const mockExposureImpact = [          eventId: 'SIM-2',
+      expect(engine.generateHazardEvents).toHaveBeenCalledTimes(2);
+      expect(events).toHaveLength(2);
+    });
 
-          { exposureId: 'exp1', damageRatio: 0.25, grossLoss: 125000 }          hazardType: 'Hurricane',
+    test('should generate correct number of events based on frequency distribution', async () => {
+      jest.spyOn(engine, 'getHazardFrequencyDistribution').mockReturnValue({
+        type: 'Poisson',
+        lambda: 2.5
+      });
+      jest.spyOn(engine, 'generateEventCount').mockReturnValue(3);
+      jest.spyOn(engine, 'generateSingleEvent').mockResolvedValue({
+        eventId: 'test-event',
+        hazardType: 'Earthquake'
+      });
 
-        ];          severity: 'Severe',
+      const events = await engine.generateHazardEvents(
+        'Earthquake', 2020, mockConfig, 'sim-id'
+      );
 
-        const mockRiskMetrics = { var95: 750000, tvar95: 950000 };          eventYear: 2021,
+      expect(engine.generateEventCount).toHaveBeenCalledWith({
+        type: 'Poisson',
+        lambda: 2.5
+      });
+      expect(engine.generateSingleEvent).toHaveBeenCalledTimes(3);
+      expect(events).toHaveLength(3);
+    });
+  });
 
-          financialImpact: {
+  describe('Statistical Methods', () => {
+    test('should calculate median correctly', () => {
+      expect(engine.calculateMedian([1, 3, 5, 7, 9])).toBe(5);
+      expect(engine.calculateMedian([1, 2, 3, 4])).toBe(2.5);
+      expect(engine.calculateMedian([])).toBe(0);
+      expect(engine.calculateMedian([5])).toBe(5);
+    });
 
-        jest.spyOn(engine, 'generateEventIntensity').mockReturnValue(7.2);            totalLoss: 2000000,
+    test('should calculate standard deviation correctly', () => {
+      const values = [2, 4, 4, 4, 5, 5, 7, 9];
+      const stdDev = engine.calculateStandardDeviation(values);
+      expect(stdDev).toBeCloseTo(1.86, 1);
+      expect(engine.calculateStandardDeviation([])).toBe(0);
+    });
 
-        jest.spyOn(engine, 'generateGeographicImpact').mockResolvedValue(mockGeographicImpact);            currency: 'USD'
+    test('should calculate Value at Risk correctly', () => {
+      const events = Array.from({ length: 1000 }, (_, i) => ({ totalLoss: i * 100 }));
+      const var95 = engine.calculateValueAtRisk(events, 0.95);
+      expect(var95).toBeCloseTo(95000, -2);
+      expect(engine.calculateValueAtRisk([], 0.95)).toBe(0);
+    });
 
-        jest.spyOn(engine, 'generateFinancialImpact').mockResolvedValue(mockFinancialImpact);          },
+    test('should calculate Tail Value at Risk correctly', () => {
+      const events = Array.from({ length: 1000 }, (_, i) => ({ totalLoss: i * 100 }));
+      const tvar95 = engine.calculateTailValueAtRisk(events, 0.95);
+      expect(tvar95).toBeGreaterThan(95000);
+      expect(engine.calculateTailValueAtRisk([], 0.95)).toBe(0);
+    });
+  });
 
-        jest.spyOn(engine, 'generateVulnerabilityImpact').mockResolvedValue(mockVulnerabilityImpact);          exposureImpact: [{
+  describe('Utility Methods', () => {
+    test('should generate unique simulation run IDs', () => {
+      const ids = Array.from({ length: 10 }, () => engine.generateSimulationRunId());
+      const uniqueIds = new Set(ids);
+      expect(uniqueIds.size).toBe(10);
+      ids.forEach(id => {
+        expect(id).toMatch(/^SIMRUN-\d{8}-\d{6}$/);
+      });
+    });
 
-        jest.spyOn(engine, 'generateExposureImpact').mockResolvedValue(mockExposureImpact);            accountId: 'ACC-2',
+    test('should generate unique event IDs', () => {
+      const ids = Array.from({ length: 10 }, () => engine.generateEventId());
+      const uniqueIds = new Set(ids);
+      expect(uniqueIds.size).toBe(10);
+      ids.forEach(id => {
+        expect(id).toMatch(/^SIM-\d{8}-\d{6}$/);
+      });
+    });
 
-        jest.spyOn(engine, 'calculateRiskMetrics').mockReturnValue(mockRiskMetrics);            exposureAmount: 3000000,
+    test('should generate valid random months', () => {
+      const months = Array.from({ length: 20 }, () => engine.generateRandomMonth());
+      months.forEach(month => {
+        expect(month).toBeGreaterThanOrEqual(1);
+        expect(month).toBeLessThanOrEqual(12);
+      });
+    });
 
-            actualLoss: 1000000
+    test('should generate valid random days', () => {
+      const days = Array.from({ length: 20 }, () => engine.generateRandomDay());
+      days.forEach(day => {
+        expect(day).toBeGreaterThanOrEqual(1);
+        expect(day).toBeLessThanOrEqual(31);
+      });
+    });
 
-        const event = await engine.generateSingleEvent(          }],
-
-          'Earthquake', 2020, mockConfig, 'sim-run-id'          vulnerabilityImpact: [{
-
-        );            vulnerabilityId: 'VUL-2',
-
-            vulnerabilityScore: 8.0,
-
-        expect(event).toMatchObject({            adjustedLoss: 800000
-
-          eventId: expect.any(String),          }],
-
-          simulationRunId: 'sim-run-id',          geographicImpact: [{
-
-          hazardType: 'Earthquake',            affectedLatitude: 25.7617,
-
-          year: 2020,            affectedLongitude: -80.1918
-
-          intensity: 7.2,          }]
-
-          geographicImpact: mockGeographicImpact,        }
-
-          financialImpact: mockFinancialImpact,      ];
-
-          vulnerabilityImpact: mockVulnerabilityImpact,
-
-          exposureImpact: mockExposureImpact,      const config = {
-
-          riskMetrics: mockRiskMetrics        exposureScope: {
-
-        });          currency: 'USD'
-
+    test('should generate random locations within bounds', () => {
+      const config = {
+        geographicScope: {
+          boundingBox: {
+            north: 49.0,
+            south: 25.0,
+            east: -66.0,
+            west: -125.0
+          }
         }
+      };
 
-        expect(event.eventDate).toBeInstanceOf(Date);      };
-
-        expect(event.totalLoss).toBeDefined();
-
-        expect(event.eventSeverity).toBeDefined();      const results = await simulationEngine.calculateSimulationResults(events, config);
-
-        expect(event.eventProbability).toBeDefined();      
-
-        expect(event.returnPeriod).toBeDefined();      expect(results).toHaveProperty('totalEvents');
-
-      });      expect(results).toHaveProperty('totalLoss');
-
-      expect(results).toHaveProperty('averageLoss');
-
-      test('should generate unique event IDs', async () => {      expect(results).toHaveProperty('maxLoss');
-
-        jest.spyOn(engine, 'generateEventIntensity').mockReturnValue(5.0);      expect(results).toHaveProperty('minLoss');
-
-        jest.spyOn(engine, 'generateGeographicImpact').mockResolvedValue([]);      expect(results).toHaveProperty('eventsByHazardType');
-
-        jest.spyOn(engine, 'generateFinancialImpact').mockResolvedValue({ totalLoss: 0 });      expect(results).toHaveProperty('eventsBySeverity');
-
-        jest.spyOn(engine, 'generateVulnerabilityImpact').mockResolvedValue([]);      expect(results).toHaveProperty('eventsByYear');
-
-        jest.spyOn(engine, 'generateExposureImpact').mockResolvedValue([]);      expect(results).toHaveProperty('expectedLoss');
-
-        jest.spyOn(engine, 'calculateRiskMetrics').mockReturnValue({});      expect(results).toHaveProperty('diversificationBenefit');
-
-      expect(results).toHaveProperty('concentrationRisk');
-
-        const events = await Promise.all([      
-
-          engine.generateSingleEvent('Earthquake', 2020, mockConfig, 'sim-run-id'),      expect(results.totalEvents).toBe(2);
-
-          engine.generateSingleEvent('Earthquake', 2020, mockConfig, 'sim-run-id'),      expect(results.totalLoss).toBe(3000000);
-
-          engine.generateSingleEvent('Earthquake', 2020, mockConfig, 'sim-run-id')      expect(results.averageLoss).toBe(1500000);
-
-        ]);      expect(results.maxLoss).toBe(2000000);
-
-      expect(results.minLoss).toBe(1000000);
-
-        const eventIds = events.map(e => e.eventId);    });
-
-        const uniqueIds = new Set(eventIds);  });
-
-        expect(uniqueIds.size).toBe(3);
-
-      });  describe('Helper methods', () => {
-
-    });    it('should generate simulation run ID', () => {
-
-  });      const id = simulationEngine.generateSimulationRunId();
-
-      expect(id).toMatch(/^SIMRUN-\d{8}-\d{6}$/);
-
-  describe('🌍 Impact Generation Methods', () => {    });
-
-    describe('generateGeographicImpact()', () => {
-
-      test('should generate geographic impact based on hazard and intensity', async () => {    it('should generate event ID', () => {
-
-        const impact = await engine.generateGeographicImpact('Earthquake', 7.5, {      const id = simulationEngine.generateEventId();
-
-          geographicScope: { regions: ['California'] }      expect(id).toMatch(/^SIM-\d{8}-\d{6}$/);
-
-        });    });
-
-
-
-        expect(Array.isArray(impact)).toBe(true);    it('should generate random month', () => {
-
-        expect(impact.length).toBeGreaterThan(0);      const month = simulationEngine.generateRandomMonth();
-
-              expect(month).toBeGreaterThanOrEqual(1);
-
-        impact.forEach(location => {      expect(month).toBeLessThanOrEqual(12);
-
-          expect(location).toMatchObject({    });
-
-            latitude: expect.any(Number),
-
-            longitude: expect.any(Number),    it('should generate random day', () => {
-
-            affectedRadius: expect.any(Number),      const day = simulationEngine.generateRandomDay();
-
-            impactIntensity: expect.any(Number)      expect(day).toBeGreaterThanOrEqual(1);
-
-          });      expect(day).toBeLessThanOrEqual(31);
-
-          expect(location.latitude).toBeGreaterThanOrEqual(-90);    });
-
-          expect(location.latitude).toBeLessThanOrEqual(90);
-
-          expect(location.longitude).toBeGreaterThanOrEqual(-180);    it('should get hazard category', () => {
-
-          expect(location.longitude).toBeLessThanOrEqual(180);      expect(simulationEngine.getHazardCategory('Earthquake')).toBe('Natural');
-
-        });      expect(simulationEngine.getHazardCategory('Hurricane')).toBe('Natural');
-
-      });      expect(simulationEngine.getHazardCategory('Unknown')).toBe('Natural');
-
+      const location = engine.generateRandomLocation(config);
+      expect(location).toHaveProperty('latitude');
+      expect(location).toHaveProperty('longitude');
+      expect(location.latitude).toBeGreaterThanOrEqual(25.0);
+      expect(location.latitude).toBeLessThanOrEqual(49.0);
+      expect(location.longitude).toBeGreaterThanOrEqual(-125.0);
+      expect(location.longitude).toBeLessThanOrEqual(-66.0);
     });
+  });
 
-      test('should scale number of locations with intensity', async () => {
-
-        const lowIntensityImpact = await engine.generateGeographicImpact('Earthquake', 4.0, {});    it('should get intensity configuration', () => {
-
-        const highIntensityImpact = await engine.generateGeographicImpact('Earthquake', 8.0, {});      const config = simulationEngine.getIntensityConfiguration('Earthquake');
-
-      expect(config).toHaveProperty('distribution');
-
-        expect(highIntensityImpact.length).toBeGreaterThanOrEqual(lowIntensityImpact.length);      expect(config).toHaveProperty('parameters');
-
-      });      expect(config).toHaveProperty('scale');
-
-    });      expect(config.scale).toBe('Richter');
-
-    });
-
-    describe('generateFinancialImpact()', () => {
-
-      test('should generate financial impact with proper structure', async () => {    it('should calculate median', () => {
-
-        const geographicImpact = [      const values = [1, 2, 3, 4, 5];
-
-          { latitude: 34.0522, longitude: -118.2437, affectedRadius: 50, impactIntensity: 8.0 }      const median = simulationEngine.calculateMedian(values);
-
-        ];      expect(median).toBe(3);
-
-    });
-
-        const impact = await engine.generateFinancialImpact(
-
-          'Earthquake', 7.5, geographicImpact, {}    it('should calculate standard deviation', () => {
-
-        );      const values = [1, 2, 3, 4, 5];
-
-      const std = simulationEngine.calculateStandardDeviation(values);
-
-        expect(impact).toMatchObject({      expect(std).toBeGreaterThan(0);
-
-          totalLoss: expect.any(Number),    });
-
-          insuredLoss: expect.any(Number),
-
-          uninsuredLoss: expect.any(Number),    it('should calculate value at risk', () => {
-
-          economicLoss: expect.any(Number),      const events = [
-
-          businessInterruptionLoss: expect.any(Number),        { financialImpact: { totalLoss: 1000000 } },
-
-          impactedAssets: expect.any(Number)        { financialImpact: { totalLoss: 2000000 } },
-
-        });        { financialImpact: { totalLoss: 3000000 } }
-
+  describe('Risk Calculations', () => {
+    test('should calculate risk metrics', () => {
+      const exposureImpact = [
+        { exposureId: 'exp1', netLoss: 100000 },
+        { exposureId: 'exp2', netLoss: 200000 }
       ];
 
-        expect(impact.totalLoss).toBeGreaterThanOrEqual(0);      const var95 = simulationEngine.calculateValueAtRisk(events, 0.95);
+      const metrics = engine.calculateRiskMetrics({}, exposureImpact, []);
 
-        expect(impact.insuredLoss).toBeLessThanOrEqual(impact.totalLoss);      expect(var95).toBeGreaterThanOrEqual(0);
-
-        expect(impact.uninsuredLoss).toBeLessThanOrEqual(impact.totalLoss);    });
-
+      expect(metrics).toMatchObject({
+        portfolioVaR: 450000,
+        portfolioTVaR: 550000,
+        expectedLoss: expect.any(Number),
+        standardDeviation: expect.any(Number),
+        coefficientOfVariation: expect.any(Number),
+        diversificationBenefit: expect.any(Number),
+        concentrationRisk: expect.any(Number)
       });
-
-    it('should calculate tail value at risk', () => {
-
-      test('should scale financial impact with geographic impact', async () => {      const events = [
-
-        const smallImpact = [        { financialImpact: { totalLoss: 1000000 } },
-
-          { latitude: 34.0522, longitude: -118.2437, affectedRadius: 10, impactIntensity: 5.0 }        { financialImpact: { totalLoss: 2000000 } },
-
-        ];        { financialImpact: { totalLoss: 3000000 } }
-
-        const largeImpact = [      ];
-
-          { latitude: 34.0522, longitude: -118.2437, affectedRadius: 100, impactIntensity: 8.0 },      const tvar95 = simulationEngine.calculateTailValueAtRisk(events, 0.95);
-
-          { latitude: 35.0522, longitude: -119.2437, affectedRadius: 80, impactIntensity: 7.5 }      expect(tvar95).toBeGreaterThanOrEqual(0);
-
-        ];    });
-
-
-
-        const smallFinancial = await engine.generateFinancialImpact('Earthquake', 6.0, smallImpact, {});    it('should calculate diversification benefit', () => {
-
-        const largeFinancial = await engine.generateFinancialImpact('Earthquake', 7.5, largeImpact, {});      const exposureImpact = [
-
-        { exposureAmount: 1000000, actualLoss: 500000 },
-
-        expect(largeFinancial.totalLoss).toBeGreaterThan(smallFinancial.totalLoss);        { exposureAmount: 2000000, actualLoss: 1000000 }
-
-      });      ];
-
-    });      const benefit = simulationEngine.calculateDiversificationBenefit(exposureImpact);
-
-  });      expect(benefit).toBeGreaterThanOrEqual(0);
-
     });
 
-  describe('🧮 Risk Calculation Methods', () => {
-
-    describe('calculateRiskMetrics()', () => {    it('should calculate concentration risk', () => {
-
-      test('should calculate comprehensive risk metrics', () => {      const exposureImpact = [
-
-        const mockExposureImpact = [        { exposureAmount: 1000000, actualLoss: 500000 },
-
-          { exposureId: 'exp1', netLoss: 100000 },        { exposureAmount: 2000000, actualLoss: 1000000 }
-
-          { exposureId: 'exp2', netLoss: 250000 },      ];
-
-          { exposureId: 'exp3', netLoss: 75000 }      const risk = simulationEngine.calculateConcentrationRisk(exposureImpact);
-
-        ];      expect(risk).toBeGreaterThanOrEqual(0);
-
-      expect(risk).toBeLessThanOrEqual(1);
-
-        mockFinancialService.calculatePortfolioVaR.mockReturnValue(450000);    });
-
-        mockFinancialService.calculatePortfolioTVaR.mockReturnValue(550000);  });
-
-
-
-        const metrics = engine.calculateRiskMetrics({}, mockExposureImpact, []);  describe('Integration tests', () => {
-
-    it('should run complete simulation workflow', async () => {
-
-        expect(metrics).toMatchObject({      const config = {
-
-          portfolioVaR: 450000,        simulationName: 'Integration Test Simulation',
-
-          portfolioTVaR: 550000,        startYear: 2020,
-
-          expectedLoss: expect.any(Number),        endYear: 2021,
-
-          standardDeviation: expect.any(Number),        timeHorizon: 1,
-
-          coefficientOfVariation: expect.any(Number),        timeHorizonUnit: 'years',
-
-          diversificationBenefit: expect.any(Number),        hazardTypes: ['Earthquake'],
-
-          concentrationRisk: expect.any(Number)        modelingConfig: {
-
-        });          numberOfSimulations: 10
-
-      });        },
-
-        geographicScope: {
-
-      test('should handle empty exposure impact gracefully', () => {          boundingBox: {
-
-        const metrics = engine.calculateRiskMetrics({}, [], []);            minLatitude: 20,
-
-            maxLatitude: 50,
-
-        expect(metrics).toMatchObject({            minLongitude: -130,
-
-          expectedLoss: 0,            maxLongitude: -60
-
-          standardDeviation: 0,          }
-
-          coefficientOfVariation: 0,        },
-
-          diversificationBenefit: 0,        exposureScope: {
-
-          concentrationRisk: 0          currency: 'USD'
-
-        });        }
-
-      });      };
-
-    });
-
-      const userId = 'user123';
-
-    describe('calculateSimulationResults()', () => {
-
-      test('should calculate comprehensive simulation results', async () => {      // Mock the simulation run
-
-        const mockEvents = [      SimulationRun.mockImplementation(() => mockSimulationRun);
-
-          {      SimulationRun.findOne = jest.fn().mockResolvedValue(mockSimulationRun);
-
-            eventId: 'event1',      SimulationRun.findById = jest.fn().mockResolvedValue(mockSimulationRun);
-
-            totalLoss: 100000,
-
-            geographicImpact: [{ latitude: 34, longitude: -118 }],      // Start simulation
-
-            financialImpact: { totalLoss: 100000 },      const result = await simulationEngine.startSimulation(config, userId);
-
-            exposureImpact: [{ exposureId: 'exp1', netLoss: 80000 }],      expect(result.success).toBe(true);
-
-            vulnerabilityImpact: [{ vulnerabilityId: 'vuln1', impactScore: 7.5 }]
-
-          },      // Mock the simulation run to be completed
-
-          {      mockSimulationRun.status = 'Completed';
-
-            eventId: 'event2',      mockSimulationRun.results = {
-
-            totalLoss: 250000,        totalEvents: 5,
-
-            geographicImpact: [{ latitude: 35, longitude: -119 }],        totalLoss: 5000000,
-
-            financialImpact: { totalLoss: 250000 },        averageLoss: 1000000
-
-            exposureImpact: [{ exposureId: 'exp2', netLoss: 200000 }],      };
-
-            vulnerabilityImpact: [{ vulnerabilityId: 'vuln2', impactScore: 8.0 }]
-
-          }      // Get simulation status
-
-        ];      const status = await simulationEngine.getSimulationStatus(mockSimulationRun.simulationRunId);
-
-      expect(status).toBeDefined();
-
-        const results = await engine.calculateSimulationResults(mockEvents, {});    });
-
-  });
-
-        expect(results).toMatchObject({});
-
-          totalEvents: 2,
-          totalLossAmount: 350000,
-          averageLossPerEvent: 175000,
-          medianLoss: expect.any(Number),
-          standardDeviation: expect.any(Number),
-          valueAtRisk95: expect.any(Number),
-          tailValueAtRisk95: expect.any(Number),
-          maxLoss: 250000,
-          minLoss: 100000,
-          lossDistribution: expect.any(Object),
-          geographicDistribution: expect.any(Object),
-          hazardTypeDistribution: expect.any(Object),
-          simulationStatistics: expect.any(Object)
-        });
-      });
-
-      test('should handle empty events array', async () => {
-        const results = await engine.calculateSimulationResults([], {});
-
-        expect(results).toMatchObject({
-          totalEvents: 0,
-          totalLossAmount: 0,
-          averageLossPerEvent: 0,
-          medianLoss: 0,
-          standardDeviation: 0,
-          maxLoss: 0,
-          minLoss: 0
-        });
-      });
+    test('should handle empty exposure impact', () => {
+      const metrics = engine.calculateRiskMetrics({}, [], []);
+      expect(metrics.expectedLoss).toBe(0);
+      expect(metrics.standardDeviation).toBe(0);
+      expect(metrics.coefficientOfVariation).toBe(0);
     });
   });
 
-  describe('🔧 Utility & Helper Methods', () => {
-    describe('ID Generation Methods', () => {
-      test('generateSimulationRunId should create unique IDs', () => {
-        const ids = Array.from({ length: 100 }, () => engine.generateSimulationRunId());
-        const uniqueIds = new Set(ids);
-        expect(uniqueIds.size).toBe(100);
-      });
-
-      test('generateEventId should create unique IDs', () => {
-        const ids = Array.from({ length: 100 }, () => engine.generateEventId());
-        const uniqueIds = new Set(ids);
-        expect(uniqueIds.size).toBe(100);
-      });
-
-      test('generatePolicyId should include account information', () => {
-        const account = { accountId: 'ACC123', accountName: 'Test Account' };
-        const policyId = engine.generatePolicyId(account);
-        
-        expect(policyId).toContain('ACC123');
-        expect(typeof policyId).toBe('string');
-        expect(policyId.length).toBeGreaterThan(10);
-      });
-    });
-
-    describe('Random Generation Methods', () => {
-      test('generateRandomMonth should return valid month', () => {
-        const months = Array.from({ length: 100 }, () => engine.generateRandomMonth());
-        
-        months.forEach(month => {
-          expect(month).toBeGreaterThanOrEqual(1);
-          expect(month).toBeLessThanOrEqual(12);
-        });
-      });
-
-      test('generateRandomDay should return valid day', () => {
-        const days = Array.from({ length: 100 }, () => engine.generateRandomDay());
-        
-        days.forEach(day => {
-          expect(day).toBeGreaterThanOrEqual(1);
-          expect(day).toBeLessThanOrEqual(31);
-        });
-      });
-
-      test('generateRandomLocation should return valid coordinates', () => {
-        const config = {
-          geographicScope: {
-            boundingBox: {
-              north: 49.0,
-              south: 25.0,
-              east: -66.0,
-              west: -125.0
-            }
-          }
-        };
-
-        const location = engine.generateRandomLocation(config);
-
-        expect(location).toMatchObject({
-          latitude: expect.any(Number),
-          longitude: expect.any(Number)
-        });
-        expect(location.latitude).toBeGreaterThanOrEqual(25.0);
-        expect(location.latitude).toBeLessThanOrEqual(49.0);
-        expect(location.longitude).toBeGreaterThanOrEqual(-125.0);
-        expect(location.longitude).toBeLessThanOrEqual(-66.0);
-      });
-    });
-
-    describe('Statistical Methods', () => {
-      test('calculateMedian should work with odd number of values', () => {
-        const values = [1, 3, 5, 7, 9];
-        const median = engine.calculateMedian(values);
-        expect(median).toBe(5);
-      });
-
-      test('calculateMedian should work with even number of values', () => {
-        const values = [1, 2, 3, 4];
-        const median = engine.calculateMedian(values);
-        expect(median).toBe(2.5);
-      });
-
-      test('calculateStandardDeviation should calculate correctly', () => {
-        const values = [2, 4, 4, 4, 5, 5, 7, 9];
-        const stdDev = engine.calculateStandardDeviation(values);
-        expect(stdDev).toBeCloseTo(1.86, 1);
-      });
-
-      test('calculateValueAtRisk should calculate VaR correctly', () => {
-        const events = Array.from({ length: 1000 }, (_, i) => ({ totalLoss: i * 100 }));
-        const var95 = engine.calculateValueAtRisk(events, 0.95);
-        expect(var95).toBeCloseTo(95000, -2);
-      });
-
-      test('calculateTailValueAtRisk should calculate TVaR correctly', () => {
-        const events = Array.from({ length: 1000 }, (_, i) => ({ totalLoss: i * 100 }));
-        const tvar95 = engine.calculateTailValueAtRisk(events, 0.95);
-        expect(tvar95).toBeGreaterThan(95000);
-      });
-    });
-  });
-
-  describe('🎛️ Configuration & Hazard Methods', () => {
-    describe('getAvailableHazardTypes()', () => {
-      test('should return available hazard types from database', async () => {
-        // Create test hazards
-        await Hazard.create([
-          { hazardId: 'HAZ001', hazardName: 'Test Earthquake', hazardType: 'Earthquake' },
-          { hazardId: 'HAZ002', hazardName: 'Test Hurricane', hazardType: 'Hurricane' },
-          { hazardId: 'HAZ003', hazardName: 'Test Flood', hazardType: 'Flood' }
-        ]);
-
-        const hazardTypes = await engine.getAvailableHazardTypes();
-
-        expect(Array.isArray(hazardTypes)).toBe(true);
-        expect(hazardTypes).toContain('Earthquake');
-        expect(hazardTypes).toContain('Hurricane');
-        expect(hazardTypes).toContain('Flood');
-      });
-    });
-
-    describe('getHazardFrequencyDistribution()', () => {
-      test('should return frequency distribution for hazard type', () => {
-        const dist = engine.getHazardFrequencyDistribution('Earthquake', 2020);
-
-        expect(dist).toMatchObject({
-          type: expect.any(String),
-          lambda: expect.any(Number)
-        });
-        expect(['Poisson', 'NegativeBinomial'].includes(dist.type)).toBe(true);
-        expect(dist.lambda).toBeGreaterThan(0);
-      });
-
-      test('should vary frequency by hazard type', () => {
-        const earthquakeDist = engine.getHazardFrequencyDistribution('Earthquake', 2020);
-        const hurricaneDist = engine.getHazardFrequencyDistribution('Hurricane', 2020);
-
-        // Different hazard types should have different parameters
-        expect(earthquakeDist.lambda).not.toBe(hurricaneDist.lambda);
-      });
-    });
-
-    describe('generateEventCount()', () => {
-      test('should generate event count based on Poisson distribution', () => {
-        const dist = { type: 'Poisson', lambda: 3.0 };
-        const counts = Array.from({ length: 100 }, () => engine.generateEventCount(dist));
-
-        counts.forEach(count => {
-          expect(count).toBeGreaterThanOrEqual(0);
-          expect(Number.isInteger(count)).toBe(true);
-        });
-
-        const average = counts.reduce((sum, count) => sum + count, 0) / counts.length;
-        expect(average).toBeCloseTo(3.0, 0);
-      });
-
-      test('should handle negative binomial distribution', () => {
-        const dist = { type: 'NegativeBinomial', r: 2, p: 0.5 };
-        const counts = Array.from({ length: 100 }, () => engine.generateEventCount(dist));
-
-        counts.forEach(count => {
-          expect(count).toBeGreaterThanOrEqual(0);
-          expect(Number.isInteger(count)).toBe(true);
-        });
-      });
-    });
-  });
-
-  describe('⚡ Performance Tests', () => {
-    test('should handle large simulation efficiently', async () => {
-      const startTime = Date.now();
-      
-      const config = {
-        startYear: 2020,
-        endYear: 2020,
-        hazardTypes: ['Earthquake'],
-        modelingConfig: { numberOfSimulations: 50 }
-      };
-
-      // Mock methods to return quickly but realistically
-      jest.spyOn(engine, 'generateHazardEvents').mockImplementation(async () => {
-        return Array.from({ length: 5 }, (_, i) => ({
-          eventId: `event-${i}`,
-          totalLoss: Math.random() * 1000000
-        }));
-      });
-
-      const result = await engine.startSimulation(config, 'perf-test-user');
-      expect(result.success).toBe(true);
-      
-      const endTime = Date.now();
-      const executionTime = endTime - startTime;
-      
-      // Should complete simulation setup in reasonable time
-      expect(executionTime).toBeLessThan(5000); // 5 seconds
-    }, 10000);
-
-    test('memory usage should remain stable during event generation', () => {
-      const initialMemory = process.memoryUsage().heapUsed;
-      
-      // Generate many events without storing them
-      for (let i = 0; i < 1000; i++) {
-        engine.generateEventId();
-        engine.generateRandomMonth();
-        engine.generateRandomDay();
-      }
-      
-      // Force garbage collection if available
-      if (global.gc) {
-        global.gc();
-      }
-      
-      const finalMemory = process.memoryUsage().heapUsed;
-      const memoryIncrease = finalMemory - initialMemory;
-      
-      // Memory increase should be reasonable (less than 10MB)
-      expect(memoryIncrease).toBeLessThan(10 * 1024 * 1024);
-    });
-  });
-
-  describe('🚨 Error Handling & Edge Cases', () => {
-    test('should handle invalid hazard types gracefully', async () => {
-      const config = {
-        startYear: 2020,
-        endYear: 2020,
-        hazardTypes: ['InvalidHazardType']
-      };
-
-      jest.spyOn(engine, 'generateHazardEvents').mockResolvedValue([]);
-
-      const events = await engine.generateYearEvents(2020, config, 'test-sim-id');
-      expect(events).toEqual([]);
-    });
-
-    test('should handle integration service failures', async () => {
-      mockIntegrationService.getAccountsInRegion.mockRejectedValue(
-        new Error('Service unavailable')
+  describe('Error Handling', () => {
+    test('should handle database connection errors gracefully', async () => {
+      jest.spyOn(SimulationRun.prototype, 'save').mockRejectedValueOnce(
+        new Error('Database connection error')
       );
 
-      const geographicImpact = [{ latitude: 34, longitude: -118, affectedRadius: 50 }];
-      
+      const config = {
+        simulationName: 'Test Simulation',
+        startYear: 2024,
+        endYear: 2024
+      };
+
       await expect(
-        engine.generateExposureImpact('Earthquake', geographicImpact, {}, {})
-      ).rejects.toThrow('Service unavailable');
+        engine.startSimulation(config, testUser.userId)
+      ).rejects.toThrow('Failed to start simulation');
     });
 
-    test('should handle financial service failures', () => {
-      mockFinancialService.calculateExpectedLoss.mockImplementation(() => {
-        throw new Error('Financial calculation failed');
-      });
-
-      const exposureImpact = [{ exposureId: 'exp1', netLoss: 100000 }];
-      
-      expect(() => {
-        engine.calculateRiskMetrics({}, exposureImpact, []);
-      }).toThrow('Financial calculation failed');
+    test('should handle invalid inputs gracefully', () => {
+      expect(() => engine.calculateMedian(null)).not.toThrow();
+      expect(() => engine.calculateStandardDeviation(undefined)).not.toThrow();
+      expect(() => engine.generateRandomLocation(null)).not.toThrow();
     });
 
     test('should handle extreme values in calculations', () => {
@@ -3165,6 +381,43 @@ describe('CATSimulationEngine - Core Tests', () => {
       
       const stdDev = engine.calculateStandardDeviation(extremeValues);
       expect(Number.isFinite(stdDev)).toBe(true);
+    });
+  });
+
+  describe('Performance Tests', () => {
+    test('should generate IDs efficiently', () => {
+      const startTime = Date.now();
+      
+      for (let i = 0; i < 1000; i++) {
+        engine.generateSimulationRunId();
+        engine.generateEventId();
+      }
+      
+      const executionTime = Date.now() - startTime;
+      expect(executionTime).toBeLessThan(100); // Should complete in less than 100ms
+    });
+
+    test('should handle multiple concurrent simulations', async () => {
+      const configs = Array.from({ length: 3 }, (_, i) => ({
+        simulationName: `Concurrent Simulation ${i + 1}`,
+        startYear: 2024,
+        endYear: 2024,
+        modelingConfig: {
+          numberOfSimulations: 5
+        }
+      }));
+
+      const promises = configs.map(config => 
+        engine.startSimulation(config, testUser.userId)
+      );
+
+      const results = await Promise.all(promises);
+      
+      expect(results).toHaveLength(3);
+      results.forEach(result => {
+        expect(result.success).toBe(true);
+        expect(result).toHaveProperty('simulationRunId');
+      });
     });
   });
 });

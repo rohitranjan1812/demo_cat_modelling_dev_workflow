@@ -285,7 +285,7 @@ describe('Hazard Controller', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toBe('Validation error');
+      expect(response.body.message).toBe('Validation failed');
     });
   });
 

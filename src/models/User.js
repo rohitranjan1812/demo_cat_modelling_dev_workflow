@@ -200,6 +200,12 @@ const userSchema = new mongoose.Schema({
     type: Map,
     of: mongoose.Schema.Types.Mixed,
     default: {}
+  },
+
+  // Audit Trail
+  deletedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true, // Adds createdAt and updatedAt

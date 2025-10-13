@@ -52,6 +52,21 @@ beforeEach(async () => {
   }
 });
 
+// Also clear database after each test to ensure clean state
+afterEach(async () => {
+  if (testEnv.isDatabaseConnected()) {
+    try {
+      // Clear all collections
+      const collections = mongoose.connection.collections;
+      for (let collection in collections) {
+        await collections[collection].deleteMany({});
+      }
+    } catch (error) {
+      console.warn('⚠️  Could not clear database after test:', error.message);
+    }
+  }
+});
+
 // Increase timeout for database operations
 jest.setTimeout(30000);
 

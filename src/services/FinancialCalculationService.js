@@ -700,6 +700,67 @@ class FinancialCalculationService {
     if (priceRatio < 1.3) return 'Above Market';
     return 'Significantly Above Market';
   }
+
+  /**
+   * Convenience method for portfolio VaR calculation (for backward compatibility)
+   * @param {Array<Object>} events - Array of simulation events
+   * @param {number} confidenceLevel - Confidence level (default 0.95)
+   * @returns {number} Portfolio VaR value
+   */
+  calculatePortfolioVaR(events, confidenceLevel = 0.95) {
+    const lossData = events.map(event => 
+      event.financialImpact ? event.financialImpact.totalLoss : 0
+    );
+    return this.calculateValueAtRisk(lossData, confidenceLevel);
+  }
+
+  /**
+   * Convenience method for portfolio TVaR calculation (for backward compatibility)
+   * @param {Array<Object>} events - Array of simulation events
+   * @param {number} confidenceLevel - Confidence level (default 0.95)
+   * @returns {number} Portfolio TVaR value
+   */
+  calculatePortfolioTVaR(events, confidenceLevel = 0.95) {
+    const lossData = events.map(event => 
+      event.financialImpact ? event.financialImpact.totalLoss : 0
+    );
+    return this.calculateTailValueAtRisk(lossData, confidenceLevel);
+  }
+
+  /**
+   * Calculate loss volatility (standard deviation) for portfolio
+   * @param {Array<Object>} events - Array of simulation events
+   * @returns {number} Loss volatility
+   */
+  calculateLossVolatility(events) {
+    const lossData = events.map(event => 
+      event.financialImpact ? event.financialImpact.totalLoss : 0
+    );
+    return this.calculateStandardDeviation(lossData);
+  }
+
+  /**
+   * Calculate expected loss for events (overloaded method for backward compatibility)
+   * @param {Array<Object>|Array<number>} eventsOrLossData - Array of events or loss values
+   * @returns {number} Expected loss value
+   */
+  calculateExpectedLoss(eventsOrLossData) {
+    // Handle both event objects and direct loss data arrays
+    if (eventsOrLossData.length === 0) return 0;
+    
+    let lossData;
+    if (typeof eventsOrLossData[0] === 'object' && eventsOrLossData[0].financialImpact) {
+      // Event objects
+      lossData = eventsOrLossData.map(event => 
+        event.financialImpact ? event.financialImpact.totalLoss : 0
+      );
+    } else {
+      // Direct loss data
+      lossData = eventsOrLossData;
+    }
+    
+    return lossData.reduce((sum, loss) => sum + loss, 0) / lossData.length;
+  }
 }
 
 module.exports = FinancialCalculationService;
