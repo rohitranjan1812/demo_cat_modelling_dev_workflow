@@ -96,6 +96,13 @@ const schema = yup.object({
 });
 
 const SimulationForm: React.FC<SimulationFormProps> = ({ simulation, open, onClose, onSave }) => {
+  // 🔵 DEBUG: Log component render
+  console.log('🟢 SimulationForm RENDER');
+  console.log('🟢 Props - open:', open);
+  console.log('🟢 Props - simulation:', simulation);
+  console.log('🟢 Props - onClose:', typeof onClose);
+  console.log('🟢 Props - onSave:', typeof onSave);
+  
   const isEdit = Boolean(simulation);
   
   const { control, handleSubmit, formState: { errors }, reset, watch } = useForm({
@@ -138,7 +145,19 @@ const SimulationForm: React.FC<SimulationFormProps> = ({ simulation, open, onClo
   const totalExposure = Object.values(watchedExposure || {}).reduce((sum, value) => sum + (value || 0), 0);
 
   const onSubmit = (data: any) => {
-    onSave(data.configuration);
+    // 🔵 DEBUG: Log form submission
+    console.log('🟣 SimulationForm onSubmit called');
+    console.log('🟣 Form data:', data);
+    
+    // Flatten the structure to match backend API expectations
+    const payload = {
+      simulationName: data.simulationName,
+      simulationDescription: data.simulationDescription,
+      ...data.configuration, // Spread configuration fields to root level
+    };
+    
+    console.log('🟣 Payload to API:', payload);
+    onSave(payload);
     reset();
   };
 

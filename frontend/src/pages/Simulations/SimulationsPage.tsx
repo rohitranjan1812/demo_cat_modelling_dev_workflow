@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -74,6 +74,11 @@ const SimulationsPage: React.FC = () => {
 
   const queryClient = useQueryClient();
 
+  // 🔵 DEBUG: Track showForm state changes
+  useEffect(() => {
+    console.log('🟡 useEffect: showForm state changed to:', showForm);
+  }, [showForm]);
+
   // Fetch simulations data
   const { data: simulationsData, isLoading, refetch } = useQuery(
     ['simulations', filters],
@@ -134,8 +139,16 @@ const SimulationsPage: React.FC = () => {
   };
 
   const handleStartSimulation = () => {
+    // 🔵 DEBUG: Log button click
+    console.log('🔵 START SIMULATION BUTTON CLICKED');
+    console.log('🔵 showForm BEFORE setState:', showForm);
+    console.log('🔵 selectedSimulation BEFORE setState:', selectedSimulation);
+    
     setSelectedSimulation(null);
     setShowForm(true);
+    
+    console.log('🔵 setState calls executed (state will update on next render)');
+    console.log('🔵 Expected next render: showForm = true, selectedSimulation = null');
   };
 
   const handleViewSimulation = (simulation: SimulationRun) => {
@@ -349,11 +362,15 @@ const SimulationsPage: React.FC = () => {
       </TabPanel>
 
       {/* Forms and Modals */}
+      {/* 🔵 DEBUG: showForm = {JSON.stringify(showForm)} */}
       {showForm && (
         <SimulationForm
           simulation={selectedSimulation}
           open={showForm}
-          onClose={() => setShowForm(false)}
+          onClose={() => {
+            console.log('🔴 SimulationForm onClose called');
+            setShowForm(false);
+          }}
           onSave={handleSaveSimulation}
         />
       )}

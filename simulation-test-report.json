@@ -1,0 +1,104 @@
+{
+  "testName": "Simulation User Journey Test",
+  "startTime": "2025-10-28T21:18:43.280Z",
+  "steps": [
+    {
+      "step": 1,
+      "action": "Launch browser",
+      "status": "Success",
+      "timestamp": "2025-10-28T21:18:44.098Z"
+    },
+    {
+      "step": 2,
+      "action": "Navigate to frontend",
+      "url": "http://localhost:3000",
+      "status": "Success",
+      "screenshot": "screenshot-01-login-page.png",
+      "timestamp": "2025-10-28T21:18:47.465Z"
+    },
+    {
+      "step": 3,
+      "action": "Login",
+      "credentials": "riskmanager/RiskManager2025!",
+      "status": "Success",
+      "screenshots": [
+        "screenshot-02-before-login.png",
+        "screenshot-03-after-login.png"
+      ],
+      "timestamp": "2025-10-28T21:18:51.551Z"
+    },
+    {
+      "step": 4,
+      "action": "Navigate to Simulations",
+      "status": "Success",
+      "screenshot": "screenshot-04-simulations-page.png",
+      "timestamp": "2025-10-28T21:18:53.897Z"
+    },
+    {
+      "step": 5,
+      "action": "Click Start Simulation",
+      "usedSelector": "//button[contains(text(), 'Start')]",
+      "status": "Success",
+      "detectedErrors": [
+        {
+          "pattern": "/failed/i",
+          "severity": "High"
+        }
+      ],
+      "screenshots": [
+        "screenshot-06-before-start.png",
+        "screenshot-07-after-start-click.png"
+      ],
+      "timestamp": "2025-10-28T21:18:56.835Z"
+    }
+  ],
+  "bugs": [
+    {
+      "step": "Start Simulation Click",
+      "severity": "Critical",
+      "description": "Errors detected after clicking Start Simulation",
+      "detectedErrors": [
+        {
+          "pattern": "/failed/i",
+          "severity": "High"
+        }
+      ],
+      "bodyContent": "CAT Modeling Platform\n3\nRisk Manager\nAnalyst\nRM\nCAT Platform\nRisk Assessment & Simulation\nDashboard\nHazards\n12\nVulnerabilities\n8\nSimulations\n3\nIntegration\nAccounts\nTOOLS & REPORTS\nAnalytics\nMaps\nReports\nSettings\nv1.0.0 • CAT Modeling Platform\nSimulation Management\nConfigure and monitor catastrophe modeling simulations\nExport\nStart Simulation\nFilters\nAll Simulations\nRunning\nCompleted\nFailed\nNo simulations found\nStart a new simulation to begin risk assessment.",
+      "screenshot": "screenshot-07-after-start-click.png"
+    },
+    {
+      "step": "Browser Console Check",
+      "severity": "High",
+      "description": "Found 6 browser console errors/warnings",
+      "consoleErrors": [
+        {
+          "level": "WARNING",
+          "message": "http://localhost:3000/static/js/bundle.js 152489:12 \"⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.\""
+        },
+        {
+          "level": "WARNING",
+          "message": "http://localhost:3000/static/js/bundle.js 152489:12 \"⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.\""
+        },
+        {
+          "level": "SEVERE",
+          "message": "http://localhost:3000/ - Error while trying to use the following icon from the Manifest: http://localhost:3000/logo192.png (Download error or resource isn't a valid image)"
+        },
+        {
+          "level": "SEVERE",
+          "message": "http://localhost:3000/static/js/bundle.js 32601:16 \"MUI: You are providing a disabled `button` child to the Tooltip component.\\nA disabled element does not fire events.\\nTooltip needs to listen to the child element's events to display the title.\\n\\nAdd a simple wrapper element, such as a `span`.\""
+        },
+        {
+          "level": "SEVERE",
+          "message": "http://localhost:3000/static/js/bundle.js 32601:16 \"MUI: You are providing a disabled `button` child to the Tooltip component.\\nA disabled element does not fire events.\\nTooltip needs to listen to the child element's events to display the title.\\n\\nAdd a simple wrapper element, such as a `span`.\""
+        },
+        {
+          "level": "SEVERE",
+          "message": "http://localhost:3000/static/js/bundle.js 32601:16 \"MUI: You are providing a disabled `button` child to the Tooltip component.\\nA disabled element does not fire events.\\nTooltip needs to listen to the child element's events to display the title.\\n\\nAdd a simple wrapper element, such as a `span`.\""
+        }
+      ]
+    }
+  ],
+  "screenshots": [],
+  "status": "Completed",
+  "endTime": "2025-10-28T21:18:56.842Z"
+}

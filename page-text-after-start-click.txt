@@ -1,0 +1,33 @@
+CAT Modeling Platform
+3
+Risk Manager
+Analyst
+RM
+CAT Platform
+Risk Assessment & Simulation
+Dashboard
+Hazards
+12
+Vulnerabilities
+8
+Simulations
+3
+Integration
+Accounts
+TOOLS & REPORTS
+Analytics
+Maps
+Reports
+Settings
+v1.0.0 • CAT Modeling Platform
+Simulation Management
+Configure and monitor catastrophe modeling simulations
+Export
+Start Simulation
+Filters
+All Simulations
+Running
+Completed
+Failed
+No simulations found
+Start a new simulation to begin risk assessment.
