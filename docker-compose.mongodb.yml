@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  mongodb-primary:
+    image: mongo:7.0
+    container_name: cat_modeling_mongodb_primary
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: cat_modeling_dev
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/init-replica.sh:/docker-entrypoint-initdb.d/init-replica.sh:ro
+    command: >
+      mongod 
+      --replSet rs0 
+      --bind_ip_all 
+      --keyFile /etc/mongodb-keyfile
+      --auth
+    networks:
+      - mongodb_network
+
+  mongodb-init:
+    image: mongo:7.0
+    container_name: cat_modeling_mongodb_init
+    depends_on:
+      - mongodb-primary
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    volumes:
+      - ./scripts/init-replica-set.js:/init-replica-set.js:ro
+    command: >
+      bash -c "
+        sleep 10 &&
+        mongo --host mongodb-primary:27017 -u admin -p password123 --authenticationDatabase admin --eval '
+          rs.initiate({
+            _id: \"rs0\",
+            members: [
+              {_id: 0, host: \"mongodb-primary:27017\", priority: 1}
+            ]
+          })' &&
+        sleep 5 &&
+        mongo --host mongodb-primary:27017 -u admin -p password123 --authenticationDatabase admin cat_modeling_dev --eval '
+          db.createUser({
+            user: \"catuser\",
+            pwd: \"catpassword\",
+            roles: [{role: \"readWrite\", db: \"cat_modeling_dev\"}, {role: \"readWrite\", db: \"cat_modeling_dev_test\"}]
+          })'"
+    networks:
+      - mongodb_network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  mongodb_network:
+    driver: bridge

@@ -38,8 +38,30 @@ class SimulationController {
         });
       }
 
-      const config = req.body;
+      const requestBody = req.body;
       const userId = req.user?.id || 'anonymous';
+
+      // Transform the request body to match the expected structure
+      const config = {
+        simulationName: requestBody.simulationName,
+        simulationDescription: requestBody.simulationDescription,
+        startYear: requestBody.startYear,
+        endYear: requestBody.endYear,
+        timeHorizon: requestBody.timeHorizon,
+        timeHorizonUnit: requestBody.timeHorizonUnit,
+        hazardTypes: requestBody.hazardTypes || [],
+        geographicScope: requestBody.geographicScope || {},
+        exposureScope: requestBody.exposureScope || {},
+        vulnerabilityScope: requestBody.vulnerabilityScope || {},
+        modelingConfig: {
+          modelProvider: requestBody.modelingConfig?.modelProvider || 'AIR',
+          modelType: requestBody.modelingConfig?.modelType || 'Probabilistic',
+          resolution: requestBody.modelingConfig?.resolution || 'High',
+          numberOfSimulations: requestBody.modelingConfig?.numberOfSimulations || 1000,
+          probabilityDistributions: requestBody.modelingConfig?.probabilityDistributions || {}
+        },
+        riskConfig: requestBody.riskConfig || {}
+      };
 
       // Start simulation
       const result = await this.simulationEngine.startSimulation(config, userId);

@@ -272,6 +272,7 @@ describe('Account Controller', () => {
         accountName: 'Child Account',
         accountType: 'Reinsurance',
         parentAccountId: 'ACC-111111',
+        accountLevel: 2,
         totalExposure: 500000,
         createdBy: 'test-user',
         lastModifiedBy: 'test-user'
@@ -316,6 +317,7 @@ describe('Account Controller', () => {
         accountName: 'Child Account 1',
         accountType: 'Reinsurance',
         parentAccountId: 'ACC-111111',
+        accountLevel: 2,
         totalExposure: 500000,
         createdBy: 'test-user',
         lastModifiedBy: 'test-user'
@@ -326,6 +328,7 @@ describe('Account Controller', () => {
         accountName: 'Child Account 2',
         accountType: 'Reinsurance',
         parentAccountId: 'ACC-111111',
+        accountLevel: 2,
         totalExposure: 300000,
         createdBy: 'test-user',
         lastModifiedBy: 'test-user'

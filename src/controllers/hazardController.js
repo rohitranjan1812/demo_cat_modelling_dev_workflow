@@ -1,10 +1,5 @@
+const HazardService = require('../services/HazardService');
 const Hazard = require('../models/Hazard');
-const HazardEvent = require('../models/HazardEvent');
-const HazardZone = require('../models/HazardZone');
-const HazardScenario = require('../models/HazardScenario');
-const Location = require('../models/Location');
-const Policy = require('../models/Policy');
-const Account = require('../models/Account');
 const { useMockDB, mockResponses } = require('../middleware/mockDataHandler');
 
 // Hazard Controller
@@ -1109,6 +1104,110 @@ class HazardAnalysisController {
       res.status(500).json({
         success: false,
         message: 'Error analyzing policy hazard exposure',
+        error: error.message
+      });
+    }
+  }
+
+  // Get hazards affecting a specific location
+  static async getHazardsAffectingLocation(req, res) {
+    try {
+      // Return empty data in mock mode
+      if (useMockDB) {
+        return res.json(mockResponses.emptyList(req));
+      }
+
+      const { latitude, longitude } = req.query;
+
+      if (!latitude || !longitude) {
+        return res.status(400).json({
+          success: false,
+          message: 'Latitude and longitude are required'
+        });
+      }
+
+      const lat = parseFloat(latitude);
+      const lng = parseFloat(longitude);
+
+      if (isNaN(lat) || isNaN(lng)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid latitude or longitude values'
+        });
+      }
+
+      const hazardService = new HazardService();
+      const location = { latitude: lat, longitude: lng };
+      const result = await hazardService.getHazardsNearLocation(location, { maxDistance: 100000 }); // 100km radius
+
+      res.json({
+        success: true,
+        data: result.data
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching hazards affecting location',
+        error: error.message
+      });
+    }
+  }
+
+  // Get hazard statistics
+  static async getHazardStatistics(req, res) {
+    try {
+      // Return mock statistics in mock mode
+      if (useMockDB) {
+        return res.json({
+          success: true,
+          data: {
+            overall: { totalHazards: 0 },
+            bySeverity: {},
+            byType: {}
+          }
+        });
+      }
+
+      // Get total count
+      const totalHazards = await Hazard.countDocuments({ status: 'Active' });
+
+      // Get statistics by severity
+      const bySeverity = await Hazard.aggregate([
+        { $match: { status: 'Active' } },
+        { $group: { _id: '$severity', count: { $sum: 1 } } }
+      ]);
+
+      // Get statistics by type
+      const byType = await Hazard.aggregate([
+        { $match: { status: 'Active' } },
+        { $group: { _id: '$hazardType', count: { $sum: 1 } } }
+      ]);
+
+      // Transform aggregation results to objects
+      const severityStats = {};
+      bySeverity.forEach(item => {
+        severityStats[item._id] = item.count;
+      });
+
+      const typeStats = {};
+      byType.forEach(item => {
+        typeStats[item._id] = item.count;
+      });
+
+      res.json({
+        success: true,
+        data: {
+          overall: {
+            totalHazards
+          },
+          bySeverity: severityStats,
+          byType: typeStats
+        }
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching hazard statistics',
         error: error.message
       });
     }

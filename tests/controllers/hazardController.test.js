@@ -13,12 +13,7 @@ app.use(express.json());
 app.use('/api', hazardRoutes);
 
 describe('Hazard Controller', () => {
-  beforeAll(async () => {
-    // Connect to test database
-    await mongoose.connect(process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/cat_modeling_test');
-  });
-
-  afterAll(async () => {
+    afterAll(async () => {
     // Clean up and disconnect
     await mongoose.connection.db.dropDatabase();
     await mongoose.disconnect();
@@ -85,9 +80,9 @@ describe('Hazard Controller', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveLength(2);
-      expect(response.body.pagination).toBeDefined();
-      expect(response.body.pagination.total).toBe(2);
+      expect(response.body.data.data).toHaveLength(2);
+      expect(response.body.data.pagination).toBeDefined();
+      expect(response.body.data.pagination.total).toBe(2);
     });
 
     it('should filter hazards by type', async () => {
@@ -142,8 +137,8 @@ describe('Hazard Controller', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveLength(1);
-      expect(response.body.data[0].hazardType).toBe('Earthquake');
+      expect(response.body.data.data).toHaveLength(1);
+      expect(response.body.data.data[0].hazardType).toBe('Earthquake');
     });
 
     it('should filter hazards by severity', async () => {
@@ -198,8 +193,8 @@ describe('Hazard Controller', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toHaveLength(1);
-      expect(response.body.data[0].severity).toBe('Major');
+      expect(response.body.data.data).toHaveLength(1);
+      expect(response.body.data.data[0].severity).toBe('Major');
     });
   });
 
@@ -290,7 +285,7 @@ describe('Hazard Controller', () => {
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toBe('Validation error');
+      expect(response.body.message).toBe('Validation failed');
     });
   });
 

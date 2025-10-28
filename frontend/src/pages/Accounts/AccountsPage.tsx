@@ -300,8 +300,8 @@ const AccountsPage: React.FC = () => {
                           <AccountBalanceIcon fontSize="small" color="action" />
                         </ListItemIcon>
                         <ListItemText
-                          primary="Email"
-                          secondary={account.contactInfo.email}
+                          primary="Account ID"
+                          secondary={account.accountId || 'N/A'}
                           primaryTypographyProps={{ variant: 'caption', fontWeight: 600 }}
                           secondaryTypographyProps={{ variant: 'body2' }}
                         />
@@ -312,8 +312,8 @@ const AccountsPage: React.FC = () => {
                           <AccountBalanceIcon fontSize="small" color="action" />
                         </ListItemIcon>
                         <ListItemText
-                          primary="Location"
-                          secondary={`${account.contactInfo.address.city}, ${account.contactInfo.address.country}`}
+                          primary="Regions"
+                          secondary={account.regions.join(', ') || 'N/A'}
                           primaryTypographyProps={{ variant: 'caption', fontWeight: 600 }}
                           secondaryTypographyProps={{ variant: 'body2' }}
                         />
@@ -325,7 +325,7 @@ const AccountsPage: React.FC = () => {
                         </ListItemIcon>
                         <ListItemText
                           primary="Exposure"
-                          secondary={`${account.riskProfile.totalExposure.toLocaleString()} ${account.riskProfile.currency}`}
+                          secondary={`${account.totalExposure?.toLocaleString() || 'N/A'} ${account.currency || 'USD'}`}
                           primaryTypographyProps={{ variant: 'caption', fontWeight: 600 }}
                           secondaryTypographyProps={{ variant: 'body2' }}
                         />
@@ -342,7 +342,7 @@ const AccountsPage: React.FC = () => {
                         variant="outlined"
                       />
                       <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                        {account.policies.length} policies
+                        {account.accountType} account
                       </Typography>
                     </Box>
                   </CardContent>

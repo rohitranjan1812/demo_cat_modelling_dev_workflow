@@ -1,0 +1,17 @@
+{
+  "terminal.integrated.profiles.windows": {
+    "cursor-backend": {
+      "path": "powershell.exe",
+      "args": ["-NoExit", "-Command", "cd D:\\vibe_coding\\demo_cat_modelling_dev_workflow; Write-Host '🚀 CURSOR-BACKEND - Node.js API Server' -ForegroundColor Red; npm run start:backend"],
+      "icon": "server",
+      "color": "terminal.ansiRed"
+    },
+    "cursor-frontend": {
+      "path": "powershell.exe", 
+      "args": ["-NoExit", "-Command", "cd D:\\vibe_coding\\demo_cat_modelling_dev_workflow\\frontend; Write-Host '⚛️ CURSOR-FRONTEND - React Development Server' -ForegroundColor Blue; npm start"],
+      "icon": "browser",
+      "color": "terminal.ansiBlue"
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "cursor-backend"
+}

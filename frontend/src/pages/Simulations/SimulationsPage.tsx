@@ -35,6 +35,7 @@ import apiService from '../../services/api';
 import SimulationList from '../../components/Simulations/SimulationList';
 import SimulationForm from '../../components/Simulations/SimulationForm';
 import SimulationDetails from '../../components/Simulations/SimulationDetails';
+import SimulationFullResults from '../../components/Simulations/SimulationFullResults';
 import { SimulationRun, SimulationFilters } from '../../types';
 
 interface TabPanelProps {
@@ -68,6 +69,7 @@ const SimulationsPage: React.FC = () => {
   });
   const [showForm, setShowForm] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [showFullResults, setShowFullResults] = useState(false);
   const [selectedSimulation, setSelectedSimulation] = useState<SimulationRun | null>(null);
 
   const queryClient = useQueryClient();
@@ -139,6 +141,11 @@ const SimulationsPage: React.FC = () => {
   const handleViewSimulation = (simulation: SimulationRun) => {
     setSelectedSimulation(simulation);
     setShowDetails(true);
+  };
+
+  const handleViewFullResults = (simulation: SimulationRun) => {
+    setSelectedSimulation(simulation);
+    setShowFullResults(true);
   };
 
   const handleCancelSimulation = (id: string) => {
@@ -356,6 +363,15 @@ const SimulationsPage: React.FC = () => {
           simulation={selectedSimulation}
           open={showDetails}
           onClose={() => setShowDetails(false)}
+          onViewFullResults={handleViewFullResults}
+        />
+      )}
+
+      {showFullResults && selectedSimulation && (
+        <SimulationFullResults
+          simulation={selectedSimulation}
+          open={showFullResults}
+          onClose={() => setShowFullResults(false)}
         />
       )}
     </Box>

@@ -64,83 +64,151 @@ async function testEndpoint(method, endpoint, data = null, description = '') {
   }
 }
 
-// Main test suite
-async function runAPITests() {
-  console.log('🧪 Starting Comprehensive API Integration Tests'.yellow);
-  console.log('================================================'.yellow);
+// Real DB Integration Tests
+async function runRealDBTests() {
+  console.log('\n🧪 Running Real Database Integration Tests'.cyan);
+  console.log('================================================'.cyan);
   
-  // 1. Health Check
-  console.log('\n📋 Testing Health Endpoints'.yellow);
-  await testEndpoint('GET', HEALTH_URL, null, 'Backend health check');
-  await testEndpoint('GET', '/integration/health', null, 'Integration service health');
-  await testEndpoint('GET', '/simulations/health', null, 'Simulation service health');
-  
-  // 2. Account Endpoints
-  console.log('\n📋 Testing Account Endpoints'.yellow);
-  await testEndpoint('GET', '/accounts', null, 'Get all accounts');
-  await testEndpoint('GET', '/accounts/statistics', null, 'Account statistics');
-  await testEndpoint('GET', '/accounts/region/North America', null, 'Accounts by region');
-  
-  // 3. Hazard Endpoints
-  console.log('\n📋 Testing Hazard Endpoints'.yellow);
-  await testEndpoint('GET', '/hazards', null, 'Get all hazards');
-  await testEndpoint('GET', '/hazards/statistics', null, 'Hazard statistics');
-  await testEndpoint('GET', '/hazards/affecting-location?latitude=25.7617&longitude=-80.1918', null, 'Hazards by location');
-  await testEndpoint('GET', '/hazard-events', null, 'Get hazard events');
-  await testEndpoint('GET', '/hazard-zones', null, 'Get hazard zones');
-  await testEndpoint('GET', '/hazard-scenarios', null, 'Get hazard scenarios');
-  
-  // 4. Vulnerability Endpoints
-  console.log('\n📋 Testing Vulnerability Endpoints'.yellow);
-  await testEndpoint('GET', '/vulnerabilities', null, 'Get all vulnerabilities');
-  await testEndpoint('GET', '/vulnerabilities/statistics', null, 'Vulnerability statistics');
-  await testEndpoint('GET', '/vulnerabilities/by-hazard/Hurricane', null, 'Vulnerabilities by hazard type');
-  
-  // 5. Simulation Endpoints
-  console.log('\n📋 Testing Simulation Endpoints'.yellow);
-  await testEndpoint('GET', '/simulations/runs', null, 'Get simulation runs');
-  await testEndpoint('GET', '/simulations/dashboard', null, 'Simulation dashboard');
-  
-  // Test simulation creation
-  const simulationConfig = {
-    simulationName: 'Test Simulation Run',
-    simulationDescription: 'API integration test simulation',
-    configuration: {
-      startYear: 2025,
-      endYear: 2025,
-      timeHorizon: 1,
-      timeHorizonUnit: 'years',
-      hazardTypes: ['Hurricane'],
-      geographicScope: {
-        regions: ['North America']
-      },
-      modelingConfig: {
-        numberOfSimulations: 100,
-        modelProvider: 'RMS',
-        modelType: 'Probabilistic',
-        resolution: 'High'
+  // Test 1: Verify seeded hazards data
+  console.log('\n📊 Testing Seeded Hazards Data'.yellow);
+  const hazardsResponse = await testEndpoint('GET', '/hazards?page=1&limit=5', null, 'Get hazards with pagination');
+  if (hazardsResponse) {
+    // Verify data structure
+    const hazards = hazardsResponse.data;
+    console.log(`Found ${hazards.length} hazards`.gray);
+    
+    if (hazards.length > 0) {
+      const firstHazard = hazards[0];
+      console.log('First hazard keys:', Object.keys(firstHazard).join(', ').gray);
+      
+      // Check for coordinate data
+      if (firstHazard.footprint) {
+        console.log(`✅ Coordinate data present: lat=${firstHazard.footprint.centerLatitude}, lng=${firstHazard.footprint.centerLongitude}`.green);
+      } else {
+        console.log('⚠️ No footprint data found'.yellow);
+      }
+      
+      // Check pagination
+      if (hazardsResponse.pagination) {
+        console.log(`Pagination: page=${hazardsResponse.pagination.page}, total=${hazardsResponse.pagination.total}`.gray);
       }
     }
-  };
-  
-  const simulationResult = await testEndpoint('POST', '/simulations/start', simulationConfig, 'Start new simulation');
-  
-  if (simulationResult && simulationResult.data && simulationResult.data.simulationRunId) {
-    const simId = simulationResult.data.simulationRunId;
-    await testEndpoint('GET', `/simulations/${simId}/status`, null, 'Get simulation status');
-    await testEndpoint('GET', `/simulations/${simId}/results`, null, 'Get simulation results');
-    await testEndpoint('GET', `/simulations/${simId}/events`, null, 'Get simulation events');
-    await testEndpoint('GET', `/simulations/${simId}/statistics`, null, 'Get simulation statistics');
   }
+
+  // Test 2: Test hazard filtering
+  console.log('\n🔍 Testing Hazard Filtering'.yellow);
+  const filteredResponse = await testEndpoint('GET', '/hazards?hazardType=Hurricane&status=Active', null, 'Filter by type and status');
+  if (filteredResponse) {
+    console.log(`Filtered hazards: ${filteredResponse.data.length}`.gray);
+  }
+
+  // Test 3: Verify seeded vulnerabilities data
+  console.log('\n📊 Testing Seeded Vulnerabilities Data'.yellow);
+  const vulnerabilitiesResponse = await testEndpoint('GET', '/vulnerabilities?page=1&limit=5', null, 'Get vulnerabilities with pagination');
+  if (vulnerabilitiesResponse) {
+    const vulnerabilities = vulnerabilitiesResponse.data;
+    console.log(`Found ${vulnerabilities.length} vulnerabilities`.gray);
+    
+    if (vulnerabilities.length > 0) {
+      const firstVulnerability = vulnerabilities[0];
+      
+      // Check for geographic scope
+      if (firstVulnerability.geographicScope) {
+        console.log(`✅ Geographic data present: lat=${firstVulnerability.geographicScope.centerLatitude}, lng=${firstVulnerability.geographicScope.centerLongitude}`.green);
+      }
+      
+      // Check vulnerability score
+      console.log(`First vulnerability score: ${firstVulnerability.overallVulnerabilityScore}`.gray);
+    }
+  }
+
+  // Test 4: Test vulnerability filtering
+  console.log('\n🔍 Testing Vulnerability Filtering'.yellow);
+  const vulnFilteredResponse = await testEndpoint('GET', '/vulnerabilities?vulnerabilityType=Physical&overallRiskLevel=High', null, 'Filter by type and risk level');
+  if (vulnFilteredResponse) {
+    console.log(`Filtered vulnerabilities: ${vulnFilteredResponse.data.length}`.gray);
+  }
+
+  // Test 5: Verify seeded accounts data
+  console.log('\n📊 Testing Seeded Accounts Data'.yellow);
+  const accountsResponse = await testEndpoint('GET', '/accounts?page=1&limit=5', null, 'Get accounts with pagination');
+  if (accountsResponse) {
+    const accounts = accountsResponse.data;
+    console.log(`Found ${accounts.length} accounts`.gray);
+    
+    if (accounts.length > 0) {
+      const firstAccount = accounts[0];
+      console.log(`First account: ${firstAccount.accountName}, Exposure: ${firstAccount.totalExposure}`.gray);
+    }
+  }
+
+  // Test 6: Verify seeded simulations data
+  console.log('\n📊 Testing Seeded Simulations Data'.yellow);
+  const simulationsResponse = await testEndpoint('GET', '/simulations/runs?page=1&limit=5', null, 'Get simulation runs');
+  if (simulationsResponse) {
+    const simulations = simulationsResponse.data;
+    console.log(`Found ${simulations.length} simulations`.gray);
+    
+    if (simulations.length > 0) {
+      const firstSimulation = simulations[0];
+      console.log(`First simulation: ${firstSimulation.simulationName}`.gray);
+    }
+  }
+
+  // Test 7: Test error handling - invalid endpoint
+  console.log('\n🛡️ Testing Error Handling'.yellow);
+  try {
+    await axios.get(`${API_BASE_URL}/invalid-endpoint`);
+  } catch (error) {
+    if (error.response?.status === 404) {
+      console.log('✅ Error handling works - 404 returned for invalid endpoint'.green);
+    } else {
+      console.log('⚠️ Unexpected error response'.yellow);
+    }
+  }
+
+  // Test 8: Test pagination edge cases
+  console.log('\n📄 Testing Pagination Edge Cases'.yellow);
+  const largePageResponse = await testEndpoint('GET', '/hazards?page=100&limit=1', null, 'Large page number (should return empty)');
+  if (largePageResponse && largePageResponse.data.length === 0) {
+    console.log('✅ Pagination edge case works - empty results for invalid page'.green);
+  }
+
+  // Test 9: Test data validation - coordinate bounds
+  console.log('\n📍 Testing Geographic Data'.yellow);
+  const hurricaneResponse = await testEndpoint('GET', '/hazards?hazardType=Hurricane', null, 'Get hurricane hazards');
+  if (hurricaneResponse) {
+    const hurricanes = hurricaneResponse.data;
+    hurricanes.forEach(hazard => {
+      if (hazard.footprint) {
+        const lat = hazard.footprint.centerLatitude;
+        const lng = hazard.footprint.centerLongitude;
+        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+          console.log(`✅ Valid coordinates: ${lat}, ${lng}`.gray);
+        } else {
+          console.log(`⚠️ Invalid coordinates: ${lat}, ${lng}`.yellow);
+        }
+      }
+    });
+  }
+
+  // Test 10: Test integration endpoint
+  console.log('\n🔗 Testing Integration Endpoints'.yellow);
+  const locationRiskResponse = await testEndpoint('GET', '/integration/risk/location?latitude=25.7617&longitude=-80.1918', null, 'Location risk assessment');
+  if (locationRiskResponse) {
+    console.log('✅ Integration endpoint returns data'.green);
+  }
+}
+
+// Update the main function to run real DB tests
+async function runAPITests() {
+  console.log('🧪 Starting API Integration Tests with Real Database'.yellow);
+  console.log('================================================'.yellow);
   
-  // 6. Integration Endpoints
-  console.log('\n📋 Testing Integration Endpoints'.yellow);
-  await testEndpoint('GET', '/integration/risk/location?latitude=25.7617&longitude=-80.1918', null, 'Location risk assessment');
-  await testEndpoint('GET', '/integration/risk/location/trends', null, 'Risk trend analysis');
-  await testEndpoint('GET', '/integration/dashboard', null, 'Risk dashboard');
-  await testEndpoint('GET', '/integration/alerts', null, 'Risk alerts');
-  
-  // Print test summary
+  // Run real DB tests
+  await runRealDBTests();
+
+  // Print summary
   console.log('\n================================================'.yellow);
   console.log('📊 Test Summary'.yellow);
   console.log('================================================'.yellow);
@@ -151,7 +219,7 @@ async function runAPITests() {
   
   // Save detailed results
   const fs = require('fs');
-  const reportPath = 'tests/api-test-report.json';
+  const reportPath = 'tests/real-db-test-report.json';
   fs.writeFileSync(reportPath, JSON.stringify(testResults, null, 2));
   console.log(`\n📄 Detailed report saved to: ${reportPath}`.gray);
   

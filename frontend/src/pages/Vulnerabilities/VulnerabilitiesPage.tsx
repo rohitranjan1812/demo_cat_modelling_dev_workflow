@@ -87,6 +87,39 @@ const VulnerabilitiesPage: React.FC = () => {
     }
   );
 
+  // Create vulnerability mutation
+  const createVulnerabilityMutation = useMutation(
+    (vulnerability: Partial<Vulnerability>) => apiService.createVulnerability(vulnerability),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['vulnerabilities']);
+        toast.success('Vulnerability created successfully');
+        setShowForm(false);
+        setSelectedVulnerability(null);
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Failed to create vulnerability');
+      },
+    }
+  );
+
+  // Update vulnerability mutation
+  const updateVulnerabilityMutation = useMutation(
+    ({ id, vulnerability }: { id: string; vulnerability: Partial<Vulnerability> }) => 
+      apiService.updateVulnerability(id, vulnerability),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['vulnerabilities']);
+        toast.success('Vulnerability updated successfully');
+        setShowForm(false);
+        setSelectedVulnerability(null);
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Failed to update vulnerability');
+      },
+    }
+  );
+
   // Delete vulnerability mutation
   const deleteVulnerabilityMutation = useMutation(
     (id: string) => apiService.deleteVulnerability(id),
@@ -136,6 +169,19 @@ const VulnerabilitiesPage: React.FC = () => {
   const handleViewVulnerability = (vulnerability: Vulnerability) => {
     setSelectedVulnerability(vulnerability);
     setShowDetails(true);
+  };
+
+  const handleSaveVulnerability = (vulnerabilityData: Partial<Vulnerability>) => {
+    if (selectedVulnerability) {
+      // Update existing vulnerability
+      updateVulnerabilityMutation.mutate({ 
+        id: selectedVulnerability._id || selectedVulnerability.vulnerabilityId, 
+        vulnerability: vulnerabilityData 
+      });
+    } else {
+      // Create new vulnerability
+      createVulnerabilityMutation.mutate(vulnerabilityData);
+    }
   };
 
   const handleDeleteVulnerability = (id: string) => {
@@ -388,10 +434,7 @@ const VulnerabilitiesPage: React.FC = () => {
           vulnerability={selectedVulnerability}
           open={showForm}
           onClose={() => setShowForm(false)}
-          onSave={() => {
-            setShowForm(false);
-            queryClient.invalidateQueries(['vulnerabilities']);
-          }}
+          onSave={handleSaveVulnerability}
         />
       )}
 

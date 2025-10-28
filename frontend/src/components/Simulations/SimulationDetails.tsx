@@ -11,7 +11,6 @@ import {
   Chip,
   Card,
   CardContent,
-  Divider,
   List,
   ListItem,
   ListItemText,
@@ -27,7 +26,6 @@ import {
   Cancel as CancelledIcon,
   Schedule as PendingIcon,
   TrendingUp as TrendingUpIcon,
-  LocationOn as LocationIcon,
   AttachMoney as MoneyIcon,
   CalendarToday as CalendarIcon,
   Timer as TimerIcon,
@@ -41,9 +39,10 @@ interface SimulationDetailsProps {
   simulation: SimulationRun;
   open: boolean;
   onClose: () => void;
+  onViewFullResults?: (simulation: SimulationRun) => void;
 }
 
-const SimulationDetails: React.FC<SimulationDetailsProps> = ({ simulation, open, onClose }) => {
+const SimulationDetails: React.FC<SimulationDetailsProps> = ({ simulation, open, onClose, onViewFullResults }) => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'Completed':
@@ -296,7 +295,7 @@ const SimulationDetails: React.FC<SimulationDetailsProps> = ({ simulation, open,
                     <Grid item xs={12} sm={3}>
                       <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(25, 118, 210, 0.04)', borderRadius: 2 }}>
                         <Typography variant="h4" sx={{ fontWeight: 700, color: '#1976d2', mb: 1 }}>
-                          {formatCurrency(simulation.configuration.exposureScope.totalExposure, simulation.configuration.exposureScope.currency)}
+                          {formatCurrency(simulation.configuration.exposureScope?.totalExposure || 0, simulation.configuration.exposureScope?.currency || 'USD')}
                         </Typography>
                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                           Total Exposure
@@ -307,7 +306,7 @@ const SimulationDetails: React.FC<SimulationDetailsProps> = ({ simulation, open,
                     <Grid item xs={12} sm={3}>
                       <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(25, 118, 210, 0.04)', borderRadius: 2 }}>
                         <Typography variant="h4" sx={{ fontWeight: 700, color: '#4caf50', mb: 1 }}>
-                          {formatCurrency(simulation.configuration.exposureScope.categories.residential, simulation.configuration.exposureScope.currency)}
+                          {formatCurrency(simulation.configuration.exposureScope.categories?.residential || 0, simulation.configuration.exposureScope?.currency || 'USD')}
                         </Typography>
                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                           Residential
@@ -318,7 +317,7 @@ const SimulationDetails: React.FC<SimulationDetailsProps> = ({ simulation, open,
                     <Grid item xs={12} sm={3}>
                       <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(25, 118, 210, 0.04)', borderRadius: 2 }}>
                         <Typography variant="h4" sx={{ fontWeight: 700, color: '#ff9800', mb: 1 }}>
-                          {formatCurrency(simulation.configuration.exposureScope.categories.commercial, simulation.configuration.exposureScope.currency)}
+                          {formatCurrency(simulation.configuration.exposureScope.categories?.commercial || 0, simulation.configuration.exposureScope?.currency || 'USD')}
                         </Typography>
                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                           Commercial
@@ -329,7 +328,7 @@ const SimulationDetails: React.FC<SimulationDetailsProps> = ({ simulation, open,
                     <Grid item xs={12} sm={3}>
                       <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(25, 118, 210, 0.04)', borderRadius: 2 }}>
                         <Typography variant="h4" sx={{ fontWeight: 700, color: '#9c27b0', mb: 1 }}>
-                          {formatCurrency(simulation.configuration.exposureScope.categories.industrial, simulation.configuration.exposureScope.currency)}
+                          {formatCurrency(simulation.configuration.exposureScope.categories?.industrial || 0, simulation.configuration.exposureScope?.currency || 'USD')}
                         </Typography>
                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                           Industrial
@@ -413,7 +412,7 @@ const SimulationDetails: React.FC<SimulationDetailsProps> = ({ simulation, open,
                       <Grid item xs={12} sm={3}>
                         <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(25, 118, 210, 0.04)', borderRadius: 1 }}>
                           <Typography variant="h4" sx={{ fontWeight: 700, color: '#f44336', mb: 1 }}>
-                            {simulation.results.summary.totalEvents.toLocaleString()}
+                            {simulation.results?.summary?.totalEvents?.toLocaleString() || '0'}
                           </Typography>
                           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                             Total Events
@@ -424,7 +423,7 @@ const SimulationDetails: React.FC<SimulationDetailsProps> = ({ simulation, open,
                       <Grid item xs={12} sm={3}>
                         <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(25, 118, 210, 0.04)', borderRadius: 1 }}>
                           <Typography variant="h4" sx={{ fontWeight: 700, color: '#ff9800', mb: 1 }}>
-                            {formatCurrency(simulation.results.summary.totalLoss, 'USD')}
+                            {formatCurrency(simulation.results?.summary?.totalLoss || 0, 'USD')}
                           </Typography>
                           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                             Total Loss
@@ -435,7 +434,7 @@ const SimulationDetails: React.FC<SimulationDetailsProps> = ({ simulation, open,
                       <Grid item xs={12} sm={3}>
                         <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(25, 118, 210, 0.04)', borderRadius: 1 }}>
                           <Typography variant="h4" sx={{ fontWeight: 700, color: '#4caf50', mb: 1 }}>
-                            {formatCurrency(simulation.results.summary.averageLoss, 'USD')}
+                            {formatCurrency(simulation.results?.summary?.averageLoss || 0, 'USD')}
                           </Typography>
                           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                             Average Loss
@@ -446,7 +445,7 @@ const SimulationDetails: React.FC<SimulationDetailsProps> = ({ simulation, open,
                       <Grid item xs={12} sm={3}>
                         <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'rgba(25, 118, 210, 0.04)', borderRadius: 1 }}>
                           <Typography variant="h4" sx={{ fontWeight: 700, color: '#9c27b0', mb: 1 }}>
-                            {formatCurrency(simulation.results.summary.maximumLoss, 'USD')}
+                            {formatCurrency(simulation.results?.summary?.maximumLoss || 0, 'USD')}
                           </Typography>
                           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                             Maximum Loss
@@ -468,6 +467,7 @@ const SimulationDetails: React.FC<SimulationDetailsProps> = ({ simulation, open,
           {simulation.status === 'Completed' && (
             <Button
               variant="contained"
+              onClick={() => onViewFullResults?.(simulation)}
               sx={{ textTransform: 'none' }}
             >
               View Full Results

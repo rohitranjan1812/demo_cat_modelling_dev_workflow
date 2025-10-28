@@ -1,0 +1,947 @@
+{
+  "passed": 9,
+  "failed": 0,
+  "tests": [
+    {
+      "name": "GET /hazards?page=1&limit=5 - Get hazards with pagination",
+      "status": "PASS",
+      "response": {
+        "success": true,
+        "data": [
+          {
+            "climateChangeImpact": {
+              "isClimateRelated": false
+            },
+            "modelData": {
+              "modelResults": {},
+              "lastModelUpdate": "2025-10-03T12:56:15.687Z"
+            },
+            "_id": "68dfc7ef4aa7e9898220d5b8",
+            "hazardId": "HAZ-00200002",
+            "hazardName": "San Andreas Fault Major Earthquake",
+            "hazardType": "Earthquake",
+            "hazardCategory": "Natural",
+            "footprint": {
+              "centerLatitude": 34.0522,
+              "centerLongitude": -118.2437,
+              "radius": 300,
+              "unit": "km",
+              "affectedArea": 282743,
+              "areaUnit": "km2",
+              "polygon": null
+            },
+            "temporal": {
+              "startTime": "2024-01-01T14:30:00.000Z",
+              "endTime": "2024-01-01T15:30:00.000Z",
+              "duration": 60,
+              "durationUnit": "minutes",
+              "peakIntensityTime": "2024-01-01T14:30:00.000Z"
+            },
+            "severity": "Major",
+            "probability": 0.05,
+            "economicImpact": [
+              {
+                "currency": "USD"
+              }
+            ],
+            "affectedRegions": [],
+            "affectedCountries": [],
+            "status": "Active",
+            "isHistorical": false,
+            "isSimulated": false,
+            "createdBy": "system",
+            "lastModifiedBy": "system",
+            "metadata": {},
+            "intensities": [],
+            "linkedVulnerabilities": [],
+            "dataSources": [],
+            "createdAt": "2025-10-03T12:56:15.690Z",
+            "updatedAt": "2025-10-03T12:56:15.690Z"
+          },
+          {
+            "climateChangeImpact": {
+              "isClimateRelated": false
+            },
+            "modelData": {
+              "modelResults": {},
+              "lastModelUpdate": "2025-10-03T12:56:15.679Z"
+            },
+            "_id": "68dfc7ef4aa7e9898220d5b2",
+            "hazardId": "HAZ-00100001",
+            "hazardName": "Hurricane Katrina Historical Analysis",
+            "hazardType": "Hurricane",
+            "hazardCategory": "Natural",
+            "footprint": {
+              "centerLatitude": 29.951,
+              "centerLongitude": -90.0715,
+              "radius": 500,
+              "unit": "km",
+              "affectedArea": 785398,
+              "areaUnit": "km2",
+              "polygon": null
+            },
+            "temporal": {
+              "startTime": "2005-08-29T12:00:00.000Z",
+              "endTime": "2005-08-30T12:00:00.000Z",
+              "duration": 24,
+              "durationUnit": "hours",
+              "peakIntensityTime": "2005-08-29T12:00:00.000Z"
+            },
+            "severity": "Catastrophic",
+            "probability": 0.02,
+            "economicImpact": [
+              {
+                "currency": "USD"
+              }
+            ],
+            "affectedRegions": [],
+            "affectedCountries": [],
+            "status": "Active",
+            "isHistorical": true,
+            "isSimulated": false,
+            "createdBy": "system",
+            "lastModifiedBy": "system",
+            "metadata": {},
+            "intensities": [],
+            "linkedVulnerabilities": [],
+            "dataSources": [],
+            "createdAt": "2025-10-03T12:56:15.681Z",
+            "updatedAt": "2025-10-03T12:56:15.681Z"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 5,
+          "total": 2,
+          "pages": 1
+        }
+      }
+    },
+    {
+      "name": "GET /hazards?hazardType=Hurricane&status=Active - Filter by type and status",
+      "status": "PASS",
+      "response": {
+        "success": true,
+        "data": [
+          {
+            "climateChangeImpact": {
+              "isClimateRelated": false
+            },
+            "modelData": {
+              "modelResults": {},
+              "lastModelUpdate": "2025-10-03T12:56:15.679Z"
+            },
+            "_id": "68dfc7ef4aa7e9898220d5b2",
+            "hazardId": "HAZ-00100001",
+            "hazardName": "Hurricane Katrina Historical Analysis",
+            "hazardType": "Hurricane",
+            "hazardCategory": "Natural",
+            "footprint": {
+              "centerLatitude": 29.951,
+              "centerLongitude": -90.0715,
+              "radius": 500,
+              "unit": "km",
+              "affectedArea": 785398,
+              "areaUnit": "km2",
+              "polygon": null
+            },
+            "temporal": {
+              "startTime": "2005-08-29T12:00:00.000Z",
+              "endTime": "2005-08-30T12:00:00.000Z",
+              "duration": 24,
+              "durationUnit": "hours",
+              "peakIntensityTime": "2005-08-29T12:00:00.000Z"
+            },
+            "severity": "Catastrophic",
+            "probability": 0.02,
+            "economicImpact": [
+              {
+                "currency": "USD"
+              }
+            ],
+            "affectedRegions": [],
+            "affectedCountries": [],
+            "status": "Active",
+            "isHistorical": true,
+            "isSimulated": false,
+            "createdBy": "system",
+            "lastModifiedBy": "system",
+            "metadata": {},
+            "intensities": [],
+            "linkedVulnerabilities": [],
+            "dataSources": [],
+            "createdAt": "2025-10-03T12:56:15.681Z",
+            "updatedAt": "2025-10-03T12:56:15.681Z"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 10,
+          "total": 1,
+          "pages": 1
+        }
+      }
+    },
+    {
+      "name": "GET /vulnerabilities?page=1&limit=5 - Get vulnerabilities with pagination",
+      "status": "PASS",
+      "response": {
+        "success": true,
+        "data": [
+          {
+            "methodology": {
+              "lastModelUpdate": "2025-10-03T12:56:15.703Z"
+            },
+            "_id": "68dfc7ef4aa7e9898220d5be",
+            "vulnerabilityId": "VUL-00100001",
+            "vulnerabilityName": "Coastal Property Hurricane Vulnerability",
+            "vulnerabilityDescription": "Comprehensive vulnerability assessment of coastal properties to hurricane damage",
+            "vulnerabilityType": "Physical",
+            "vulnerabilityCategory": "Regional",
+            "geographicScope": {
+              "centerLatitude": 25.7617,
+              "centerLongitude": -80.1918,
+              "radius": 50,
+              "radiusUnit": "km",
+              "polygon": null,
+              "administrativeLevel": "Municipal",
+              "country": "USA",
+              "region": "North America"
+            },
+            "overallVulnerabilityScore": 8.5,
+            "overallRiskLevel": "Very High",
+            "confidenceLevel": "High",
+            "vulnerabilityFactors": [
+              {
+                "factorType": "Physical",
+                "factorName": "Proximity to Coast",
+                "factorValue": 9,
+                "weight": 0.4,
+                "unit": "score",
+                "description": "Less than 1 mile from coastline",
+                "dataSource": "GIS Analysis",
+                "lastUpdated": "2025-10-03T12:56:15.700Z"
+              },
+              {
+                "factorType": "Physical",
+                "factorName": "Building Age",
+                "factorValue": 7.5,
+                "weight": 0.3,
+                "unit": "score",
+                "description": "Construction before modern hurricane codes",
+                "dataSource": "Building Records",
+                "lastUpdated": "2025-10-03T12:56:15.700Z"
+              },
+              {
+                "factorType": "Physical",
+                "factorName": "Construction Type",
+                "factorValue": 8,
+                "weight": 0.3,
+                "unit": "score",
+                "description": "Wood frame construction with limited reinforcement",
+                "dataSource": "Site Survey",
+                "lastUpdated": "2025-10-03T12:56:15.701Z"
+              }
+            ],
+            "mitigationMeasures": [
+              {
+                "measureType": "Structural",
+                "measureName": "Hurricane Shutters",
+                "effectiveness": 0.25,
+                "cost": 15000,
+                "currency": "USD",
+                "implementationTime": 14,
+                "priority": "Medium",
+                "status": "Completed"
+              },
+              {
+                "measureType": "Structural",
+                "measureName": "Roof Reinforcement",
+                "effectiveness": 0.35,
+                "cost": 25000,
+                "currency": "USD",
+                "implementationTime": 30,
+                "priority": "Medium",
+                "status": "Completed"
+              }
+            ],
+            "assessmentDate": "2024-01-15T00:00:00.000Z",
+            "validTo": null,
+            "linkedHazards": [
+              {
+                "hazardId": "HAZ-00100001",
+                "relationshipType": "Primary",
+                "_id": "68dfc7ef4aa7e9898220d5bf"
+              }
+            ],
+            "status": "Active",
+            "isPublic": false,
+            "isTemplate": false,
+            "createdBy": "system",
+            "lastModifiedBy": "system",
+            "metadata": {},
+            "hazardVulnerabilities": [],
+            "exposureVulnerabilities": [],
+            "validFrom": "2025-10-03T12:56:15.703Z",
+            "dataSources": [],
+            "linkedLocations": [],
+            "linkedAccounts": [],
+            "createdAt": "2025-10-03T12:56:15.706Z",
+            "updatedAt": "2025-10-03T12:56:15.706Z"
+          },
+          {
+            "methodology": {
+              "lastModelUpdate": "2025-10-03T12:56:15.714Z"
+            },
+            "_id": "68dfc7ef4aa7e9898220d5c4",
+            "vulnerabilityId": "VUL-00200002",
+            "vulnerabilityName": "Seismic Building Vulnerability",
+            "vulnerabilityDescription": "Structural vulnerability assessment for earthquake hazards",
+            "vulnerabilityType": "Physical",
+            "vulnerabilityCategory": "Community",
+            "geographicScope": {
+              "centerLatitude": 37.7749,
+              "centerLongitude": -122.4194,
+              "radius": 25,
+              "radiusUnit": "km",
+              "polygon": null,
+              "administrativeLevel": "Municipal",
+              "country": "USA",
+              "region": "North America"
+            },
+            "overallVulnerabilityScore": 7.2,
+            "overallRiskLevel": "High",
+            "confidenceLevel": "High",
+            "vulnerabilityFactors": [
+              {
+                "factorType": "Physical",
+                "factorName": "Soft Story Construction",
+                "factorValue": 8.5,
+                "weight": 0.5,
+                "unit": "score",
+                "description": "Building has soft story with large openings",
+                "dataSource": "Structural Analysis",
+                "lastUpdated": "2025-10-03T12:56:15.713Z"
+              },
+              {
+                "factorType": "Environmental",
+                "factorName": "Soil Type",
+                "factorValue": 6,
+                "weight": 0.3,
+                "unit": "score",
+                "description": "Built on landfill with potential liquefaction",
+                "dataSource": "Geological Survey",
+                "lastUpdated": "2025-10-03T12:56:15.713Z"
+              },
+              {
+                "factorType": "Physical",
+                "factorName": "Building Height",
+                "factorValue": 7,
+                "weight": 0.2,
+                "unit": "score",
+                "description": "Mid-rise building with resonance risk",
+                "dataSource": "Building Plans",
+                "lastUpdated": "2025-10-03T12:56:15.713Z"
+              }
+            ],
+            "mitigationMeasures": [
+              {
+                "measureType": "Structural",
+                "measureName": "Seismic Retrofitting",
+                "effectiveness": 0.6,
+                "cost": 150000,
+                "currency": "USD",
+                "implementationTime": 180,
+                "priority": "Medium",
+                "status": "Planned"
+              },
+              {
+                "measureType": "Structural",
+                "measureName": "Base Isolation",
+                "effectiveness": 0.8,
+                "cost": 500000,
+                "currency": "USD",
+                "implementationTime": 545,
+                "priority": "Medium",
+                "status": "Planned"
+              }
+            ],
+            "assessmentDate": "2024-02-01T00:00:00.000Z",
+            "validTo": null,
+            "linkedHazards": [
+              {
+                "hazardId": "HAZ-00200002",
+                "relationshipType": "Primary",
+                "_id": "68dfc7ef4aa7e9898220d5c5"
+              }
+            ],
+            "status": "Active",
+            "isPublic": false,
+            "isTemplate": false,
+            "createdBy": "system",
+            "lastModifiedBy": "system",
+            "metadata": {},
+            "hazardVulnerabilities": [],
+            "exposureVulnerabilities": [],
+            "validFrom": "2025-10-03T12:56:15.714Z",
+            "dataSources": [],
+            "linkedLocations": [],
+            "linkedAccounts": [],
+            "createdAt": "2025-10-03T12:56:15.715Z",
+            "updatedAt": "2025-10-03T12:56:15.715Z"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 5,
+          "total": 2,
+          "pages": 1
+        }
+      }
+    },
+    {
+      "name": "GET /vulnerabilities?vulnerabilityType=Physical&overallRiskLevel=High - Filter by type and risk level",
+      "status": "PASS",
+      "response": {
+        "success": true,
+        "data": [
+          {
+            "methodology": {
+              "lastModelUpdate": "2025-10-03T12:56:15.714Z"
+            },
+            "_id": "68dfc7ef4aa7e9898220d5c4",
+            "vulnerabilityId": "VUL-00200002",
+            "vulnerabilityName": "Seismic Building Vulnerability",
+            "vulnerabilityDescription": "Structural vulnerability assessment for earthquake hazards",
+            "vulnerabilityType": "Physical",
+            "vulnerabilityCategory": "Community",
+            "geographicScope": {
+              "centerLatitude": 37.7749,
+              "centerLongitude": -122.4194,
+              "radius": 25,
+              "radiusUnit": "km",
+              "polygon": null,
+              "administrativeLevel": "Municipal",
+              "country": "USA",
+              "region": "North America"
+            },
+            "overallVulnerabilityScore": 7.2,
+            "overallRiskLevel": "High",
+            "confidenceLevel": "High",
+            "vulnerabilityFactors": [
+              {
+                "factorType": "Physical",
+                "factorName": "Soft Story Construction",
+                "factorValue": 8.5,
+                "weight": 0.5,
+                "unit": "score",
+                "description": "Building has soft story with large openings",
+                "dataSource": "Structural Analysis",
+                "lastUpdated": "2025-10-03T12:56:15.713Z"
+              },
+              {
+                "factorType": "Environmental",
+                "factorName": "Soil Type",
+                "factorValue": 6,
+                "weight": 0.3,
+                "unit": "score",
+                "description": "Built on landfill with potential liquefaction",
+                "dataSource": "Geological Survey",
+                "lastUpdated": "2025-10-03T12:56:15.713Z"
+              },
+              {
+                "factorType": "Physical",
+                "factorName": "Building Height",
+                "factorValue": 7,
+                "weight": 0.2,
+                "unit": "score",
+                "description": "Mid-rise building with resonance risk",
+                "dataSource": "Building Plans",
+                "lastUpdated": "2025-10-03T12:56:15.713Z"
+              }
+            ],
+            "mitigationMeasures": [
+              {
+                "measureType": "Structural",
+                "measureName": "Seismic Retrofitting",
+                "effectiveness": 0.6,
+                "cost": 150000,
+                "currency": "USD",
+                "implementationTime": 180,
+                "priority": "Medium",
+                "status": "Planned"
+              },
+              {
+                "measureType": "Structural",
+                "measureName": "Base Isolation",
+                "effectiveness": 0.8,
+                "cost": 500000,
+                "currency": "USD",
+                "implementationTime": 545,
+                "priority": "Medium",
+                "status": "Planned"
+              }
+            ],
+            "assessmentDate": "2024-02-01T00:00:00.000Z",
+            "validTo": null,
+            "linkedHazards": [
+              {
+                "hazardId": "HAZ-00200002",
+                "relationshipType": "Primary",
+                "_id": "68dfc7ef4aa7e9898220d5c5"
+              }
+            ],
+            "status": "Active",
+            "isPublic": false,
+            "isTemplate": false,
+            "createdBy": "system",
+            "lastModifiedBy": "system",
+            "metadata": {},
+            "hazardVulnerabilities": [],
+            "exposureVulnerabilities": [],
+            "validFrom": "2025-10-03T12:56:15.714Z",
+            "dataSources": [],
+            "linkedLocations": [],
+            "linkedAccounts": [],
+            "createdAt": "2025-10-03T12:56:15.715Z",
+            "updatedAt": "2025-10-03T12:56:15.715Z"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 10,
+          "total": 1,
+          "pages": 1
+        }
+      }
+    },
+    {
+      "name": "GET /accounts?page=1&limit=5 - Get accounts with pagination",
+      "status": "PASS",
+      "response": {
+        "success": true,
+        "data": [
+          {
+            "hazardRiskProfile": {
+              "overallRiskLevel": "Very High",
+              "primaryHazards": [
+                {
+                  "hazardType": "Hurricane",
+                  "riskLevel": "Very High",
+                  "exposureAmount": 15000000,
+                  "_id": "68dfc7ef4aa7e9898220d5ac",
+                  "lastAssessed": "2025-10-03T12:56:15.669Z"
+                }
+              ],
+              "lastRiskAssessment": "2025-10-03T12:56:15.669Z"
+            },
+            "_id": "68dfc7ef4aa7e9898220d5ab",
+            "accountId": "ACC-003003",
+            "accountName": "Florida Property Insurance",
+            "accountType": "Primary",
+            "parentAccountId": null,
+            "accountLevel": 1,
+            "totalExposure": 15000000,
+            "currency": "USD",
+            "regions": [
+              "North America"
+            ],
+            "riskProfile": "Very High",
+            "maxExposurePerLocation": null,
+            "maxExposurePerPeril": null,
+            "status": "Active",
+            "effectiveDate": "2024-01-01T00:00:00.000Z",
+            "expiryDate": "2024-12-31T00:00:00.000Z",
+            "createdBy": "system",
+            "lastModifiedBy": "system",
+            "metadata": {},
+            "createdAt": "2025-10-03T12:56:15.670Z",
+            "updatedAt": "2025-10-03T12:56:15.670Z"
+          },
+          {
+            "hazardRiskProfile": {
+              "overallRiskLevel": "Medium",
+              "primaryHazards": [
+                {
+                  "hazardType": "Hurricane",
+                  "riskLevel": "Medium",
+                  "exposureAmount": 25000000,
+                  "_id": "68dfc7ef4aa7e9898220d5a6",
+                  "lastAssessed": "2025-10-03T12:56:15.662Z"
+                }
+              ],
+              "lastRiskAssessment": "2025-10-03T12:56:15.662Z"
+            },
+            "_id": "68dfc7ef4aa7e9898220d5a5",
+            "accountId": "ACC-002002",
+            "accountName": "Regional Reinsurance Ltd",
+            "accountType": "Reinsurance",
+            "parentAccountId": "ACC-001001",
+            "accountLevel": 2,
+            "totalExposure": 25000000,
+            "currency": "USD",
+            "regions": [
+              "North America"
+            ],
+            "riskProfile": "Medium",
+            "maxExposurePerLocation": null,
+            "maxExposurePerPeril": null,
+            "status": "Active",
+            "effectiveDate": "2024-01-01T00:00:00.000Z",
+            "expiryDate": "2024-12-31T00:00:00.000Z",
+            "createdBy": "system",
+            "lastModifiedBy": "system",
+            "metadata": {},
+            "createdAt": "2025-10-03T12:56:15.664Z",
+            "updatedAt": "2025-10-03T12:56:15.664Z"
+          },
+          {
+            "hazardRiskProfile": {
+              "overallRiskLevel": "High",
+              "primaryHazards": [
+                {
+                  "hazardType": "Hurricane",
+                  "riskLevel": "High",
+                  "exposureAmount": 25000000,
+                  "_id": "68dfc7ef4aa7e9898220d59f",
+                  "lastAssessed": "2025-10-03T12:56:15.641Z"
+                },
+                {
+                  "hazardType": "Earthquake",
+                  "riskLevel": "Medium",
+                  "exposureAmount": 15000000,
+                  "_id": "68dfc7ef4aa7e9898220d5a0",
+                  "lastAssessed": "2025-10-03T12:56:15.642Z"
+                }
+              ],
+              "lastRiskAssessment": "2025-10-03T12:56:15.643Z"
+            },
+            "_id": "68dfc7ef4aa7e9898220d59e",
+            "accountId": "ACC-001001",
+            "accountName": "Global Insurance Corp - Primary",
+            "accountType": "Primary",
+            "parentAccountId": null,
+            "accountLevel": 1,
+            "totalExposure": 50000000,
+            "currency": "USD",
+            "regions": [
+              "North America",
+              "Europe"
+            ],
+            "riskProfile": "High",
+            "maxExposurePerLocation": null,
+            "maxExposurePerPeril": null,
+            "status": "Active",
+            "effectiveDate": "2024-01-01T00:00:00.000Z",
+            "expiryDate": "2024-12-31T00:00:00.000Z",
+            "createdBy": "system",
+            "lastModifiedBy": "system",
+            "metadata": {},
+            "createdAt": "2025-10-03T12:56:15.650Z",
+            "updatedAt": "2025-10-03T12:56:15.650Z"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 5,
+          "total": 3,
+          "pages": 1
+        }
+      }
+    },
+    {
+      "name": "GET /simulations/runs?page=1&limit=5 - Get simulation runs",
+      "status": "PASS",
+      "response": {
+        "success": true,
+        "data": {
+          "simulationRuns": [
+            {
+              "_id": "68dfc7ef4aa7e9898220d5cd",
+              "simulationRunId": "SIMRUN-20240301-009876",
+              "simulationName": "Multi-Peril Portfolio Analysis - Q1 2024",
+              "simulationDescription": "Comprehensive multi-peril analysis including Hurricane and Earthquake for diversified portfolio",
+              "configuration": {
+                "geographicScope": {
+                  "regions": [
+                    "North America"
+                  ],
+                  "countries": [
+                    "USA"
+                  ]
+                },
+                "exposureScope": {
+                  "accountIds": [
+                    "ACC-001001",
+                    "ACC-003003"
+                  ],
+                  "minExposureAmount": 500000,
+                  "currency": "USD",
+                  "policyIds": [],
+                  "maxExposureAmount": null
+                },
+                "vulnerabilityScope": {
+                  "vulnerabilityIds": [],
+                  "vulnerabilityTypes": [],
+                  "minVulnerabilityScore": 0,
+                  "maxVulnerabilityScore": 10
+                },
+                "modelingConfig": {
+                  "modelProvider": "Multiple",
+                  "modelType": "Hybrid",
+                  "resolution": "High",
+                  "numberOfSimulations": 50000,
+                  "probabilityDistributions": {}
+                },
+                "riskConfig": {
+                  "confidenceLevels": [],
+                  "returnPeriods": []
+                },
+                "startYear": 2024,
+                "endYear": 2025,
+                "timeHorizon": 1,
+                "timeHorizonUnit": "years",
+                "hazardTypes": [
+                  "Hurricane",
+                  "Earthquake"
+                ]
+              },
+              "results": null,
+              "status": "Running",
+              "progress": 75,
+              "currentStep": "Calculating correlation matrices for multi-peril dependencies",
+              "startTime": "2024-03-01T06:00:00.000Z",
+              "endTime": null,
+              "errorDetails": {},
+              "isHistorical": false,
+              "isSimulated": true,
+              "createdBy": "system",
+              "lastModifiedBy": "system",
+              "metadata": {},
+              "createdAt": "2025-10-03T12:56:15.739Z",
+              "updatedAt": "2025-10-03T12:56:15.739Z"
+            },
+            {
+              "_id": "68dfc7ef4aa7e9898220d5c9",
+              "simulationRunId": "SIMRUN-20240101-001234",
+              "simulationName": "Hurricane Season 2024 - Gulf Coast Analysis",
+              "simulationDescription": "Comprehensive hurricane risk analysis for Gulf Coast properties covering Category 1-5 scenarios",
+              "configuration": {
+                "geographicScope": {
+                  "regions": [
+                    "North America"
+                  ],
+                  "countries": [
+                    "USA"
+                  ]
+                },
+                "exposureScope": {
+                  "accountIds": [
+                    "ACC-001001",
+                    "ACC-003003"
+                  ],
+                  "minExposureAmount": 1000000,
+                  "currency": "USD",
+                  "policyIds": [],
+                  "maxExposureAmount": null
+                },
+                "vulnerabilityScope": {
+                  "vulnerabilityIds": [],
+                  "vulnerabilityTypes": [],
+                  "minVulnerabilityScore": 0,
+                  "maxVulnerabilityScore": 10
+                },
+                "modelingConfig": {
+                  "modelProvider": "AIR",
+                  "modelType": "Probabilistic",
+                  "resolution": "High",
+                  "numberOfSimulations": 10000,
+                  "probabilityDistributions": {}
+                },
+                "riskConfig": {
+                  "confidenceLevels": [],
+                  "returnPeriods": []
+                },
+                "startYear": 2024,
+                "endYear": 2025,
+                "timeHorizon": 1,
+                "timeHorizonUnit": "years",
+                "hazardTypes": [
+                  "Hurricane"
+                ]
+              },
+              "results": {
+                "totalEvents": 12,
+                "eventsByHazardType": {},
+                "eventsBySeverity": {},
+                "eventsByYear": {},
+                "totalLoss": 45000000,
+                "averageLoss": 3750000,
+                "medianLoss": 2800000,
+                "maxLoss": 15000000,
+                "minLoss": 500000,
+                "standardDeviation": 25000000,
+                "expectedLoss": 45000000,
+                "valueAtRisk": {},
+                "tailValueAtRisk": {},
+                "diversificationBenefit": 0.15,
+                "concentrationRisk": 0.35,
+                "affectedRegions": [],
+                "affectedCountries": [],
+                "vulnerabilityDistribution": {},
+                "totalExposure": 65000000,
+                "averageExposure": 5416667,
+                "exposureDistribution": {}
+              },
+              "status": "Completed",
+              "progress": 100,
+              "startTime": "2024-01-01T10:00:00.000Z",
+              "endTime": "2024-01-01T14:30:00.000Z",
+              "duration": 16200,
+              "durationUnit": "seconds",
+              "errorDetails": {},
+              "isHistorical": false,
+              "isSimulated": true,
+              "createdBy": "system",
+              "lastModifiedBy": "system",
+              "metadata": {},
+              "createdAt": "2025-10-03T12:56:15.729Z",
+              "updatedAt": "2025-10-03T12:56:15.729Z"
+            }
+          ],
+          "pagination": {
+            "page": 1,
+            "limit": 5,
+            "total": 2,
+            "pages": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /hazards?page=100&limit=1 - Large page number (should return empty)",
+      "status": "PASS",
+      "response": {
+        "success": true,
+        "data": [],
+        "pagination": {
+          "page": 100,
+          "limit": 1,
+          "total": 2,
+          "pages": 2
+        }
+      }
+    },
+    {
+      "name": "GET /hazards?hazardType=Hurricane - Get hurricane hazards",
+      "status": "PASS",
+      "response": {
+        "success": true,
+        "data": [
+          {
+            "climateChangeImpact": {
+              "isClimateRelated": false
+            },
+            "modelData": {
+              "modelResults": {},
+              "lastModelUpdate": "2025-10-03T12:56:15.679Z"
+            },
+            "_id": "68dfc7ef4aa7e9898220d5b2",
+            "hazardId": "HAZ-00100001",
+            "hazardName": "Hurricane Katrina Historical Analysis",
+            "hazardType": "Hurricane",
+            "hazardCategory": "Natural",
+            "footprint": {
+              "centerLatitude": 29.951,
+              "centerLongitude": -90.0715,
+              "radius": 500,
+              "unit": "km",
+              "affectedArea": 785398,
+              "areaUnit": "km2",
+              "polygon": null
+            },
+            "temporal": {
+              "startTime": "2005-08-29T12:00:00.000Z",
+              "endTime": "2005-08-30T12:00:00.000Z",
+              "duration": 24,
+              "durationUnit": "hours",
+              "peakIntensityTime": "2005-08-29T12:00:00.000Z"
+            },
+            "severity": "Catastrophic",
+            "probability": 0.02,
+            "economicImpact": [
+              {
+                "currency": "USD"
+              }
+            ],
+            "affectedRegions": [],
+            "affectedCountries": [],
+            "status": "Active",
+            "isHistorical": true,
+            "isSimulated": false,
+            "createdBy": "system",
+            "lastModifiedBy": "system",
+            "metadata": {},
+            "intensities": [],
+            "linkedVulnerabilities": [],
+            "dataSources": [],
+            "createdAt": "2025-10-03T12:56:15.681Z",
+            "updatedAt": "2025-10-03T12:56:15.681Z"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 10,
+          "total": 1,
+          "pages": 1
+        }
+      }
+    },
+    {
+      "name": "GET /integration/risk/location?latitude=25.7617&longitude=-80.1918 - Location risk assessment",
+      "status": "PASS",
+      "response": {
+        "success": true,
+        "data": {
+          "location": {
+            "latitude": 25.7617,
+            "longitude": -80.1918,
+            "bufferKm": 50
+          },
+          "analysis": {
+            "hazards": 0,
+            "vulnerabilities": 0,
+            "accounts": 0,
+            "zones": 0,
+            "scenarios": 0
+          },
+          "riskMetrics": {
+            "hazardRiskScore": 0,
+            "vulnerabilityRiskScore": 0,
+            "combinedRiskScore": 0,
+            "overallRiskLevel": "Low",
+            "totalExposure": 0,
+            "currency": "USD",
+            "dataQuality": {
+              "score": 0,
+              "level": "Low",
+              "factors": {
+                "hazardData": 0,
+                "vulnerabilityData": 0,
+                "accountData": 0
+              }
+            }
+          },
+          "recommendations": [],
+          "rawData": {
+            "hazards": [],
+            "vulnerabilities": [],
+            "accounts": [],
+            "zones": [],
+            "scenarios": []
+          }
+        }
+      }
+    }
+  ]
+}

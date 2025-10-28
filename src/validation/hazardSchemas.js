@@ -2,7 +2,7 @@ const Joi = require('joi');
 
 // Hazard validation schema
 const hazardSchema = Joi.object({
-  hazardId: Joi.string().pattern(/^HAZ-\d{8}$/).required(),
+  hazardId: Joi.string().pattern(/^HAZ-\d{8}$/).optional(),
   hazardName: Joi.string().max(200).required(),
   hazardType: Joi.string().valid(
     'Earthquake', 'Hurricane', 'Typhoon', 'Cyclone', 'Tornado', 'Flood', 'Flash Flood',
@@ -15,6 +15,8 @@ const hazardSchema = Joi.object({
     'Climate Change Impact', 'Sea Level Rise', 'Permafrost Thaw', 'Glacial Lake Outburst'
   ).required(),
   hazardCategory: Joi.string().valid('Natural', 'Man-made', 'Emerging', 'Compound', 'Cascading').required(),
+  description: Joi.string().max(1000).optional(),
+  hazardDescription: Joi.string().max(1000).optional(),
   
   intensities: Joi.array().items(Joi.object({
     scale: Joi.string().valid('Richter', 'Mercalli', 'Saffir-Simpson', 'Fujita', 'Enhanced Fujita', 'Beaufort', 'Custom').required(),
@@ -34,14 +36,14 @@ const hazardSchema = Joi.object({
   }).required(),
   
   temporal: Joi.object({
-    startTime: Joi.date().required(),
+    startTime: Joi.date().optional(),
     endTime: Joi.date().optional(),
     duration: Joi.number().min(0).optional(),
     durationUnit: Joi.string().valid('seconds', 'minutes', 'hours', 'days', 'weeks', 'months').optional(),
     peakIntensityTime: Joi.date().optional(),
     warningTime: Joi.number().min(0).optional(),
     warningTimeUnit: Joi.string().valid('seconds', 'minutes', 'hours', 'days').optional()
-  }).required(),
+  }).optional(),
   
   severity: Joi.string().valid('Minor', 'Moderate', 'Major', 'Severe', 'Catastrophic', 'Extreme').required(),
   probability: Joi.number().min(0).max(1).required(),
@@ -58,6 +60,14 @@ const hazardSchema = Joi.object({
   
   affectedRegions: Joi.array().items(Joi.string().valid('North America', 'Europe', 'Asia Pacific', 'Latin America', 'Middle East', 'Africa')).optional(),
   affectedCountries: Joi.array().items(Joi.string().max(100)).optional(),
+  
+  economicImpact: Joi.array().items(Joi.object({
+    estimatedLoss: Joi.number().min(0).required(),
+    currency: Joi.string().valid('USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CNY', 'INR', 'BRL').required(),
+    description: Joi.string().max(500).optional(),
+    confidenceLevel: Joi.string().valid('Low', 'Medium', 'High', 'Very High').optional(),
+    methodology: Joi.string().max(200).optional()
+  })).optional(),
   
   vulnerabilityFactors: Joi.object({
     populationDensity: Joi.string().valid('Low', 'Medium', 'High', 'Very High').optional(),

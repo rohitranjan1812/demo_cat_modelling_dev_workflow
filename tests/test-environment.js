@@ -1,5 +1,9 @@
+// Load environment variables
+require('dotenv').config();
+
 const mongoose = require('mongoose');
 const { mockMongoose } = require('./mock-database');
+const { createDatabaseIndexes } = require('../src/tools/database-indexes');
 
 /**
  * Test Environment Manager
@@ -14,8 +18,8 @@ class TestEnvironment {
 
   async initialize() {
     try {
-      // Try to connect to real MongoDB
-      const testDbUri = process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/cat_modeling_exposure_test';
+      // Try to connect to real MongoDB with replica set support
+      const testDbUri = process.env.MONGODB_TEST_URI || 'mongodb://127.0.0.1:27017/cat_modeling_exposure_test?replicaSet=rs0';
       
       await mongoose.connect(testDbUri, {
         useNewUrlParser: true,
@@ -25,6 +29,14 @@ class TestEnvironment {
         maxPoolSize: 10,
         minPoolSize: 1
       });
+      
+      // Create database indexes to ensure unique constraints work
+      try {
+        await createDatabaseIndexes();
+        console.log('✅ Database indexes created');
+      } catch (indexError) {
+        console.warn('⚠️  Could not create database indexes:', indexError.message);
+      }
       
       this.isDatabaseAvailable = true;
       console.log('✅ Real database connected for tests');

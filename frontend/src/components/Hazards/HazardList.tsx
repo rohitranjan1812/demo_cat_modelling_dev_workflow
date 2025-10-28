@@ -214,10 +214,12 @@ const HazardList: React.FC<HazardListProps> = ({
 
                 <TableCell>
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {formatCurrency(hazard.impactMetrics.potentialLoss, hazard.impactMetrics.currency)}
+                    {hazard.economicImpact && hazard.economicImpact.length > 0 
+                      ? formatCurrency(hazard.economicImpact[0].estimatedLoss || 0, hazard.economicImpact[0].currency || 'USD')
+                      : 'N/A'}
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    {hazard.impactMetrics.affectedPopulation.toLocaleString()} people
+                    {hazard.footprint.affectedArea?.toLocaleString() || 'N/A'} km²
                   </Typography>
                 </TableCell>
 

@@ -12,6 +12,7 @@ import {
   Divider,
   ListItemIcon,
   ListItemText,
+  Chip,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -20,8 +21,10 @@ import {
   AccountCircle as AccountCircleIcon,
   Logout as LogoutIcon,
   Dashboard as DashboardIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -30,6 +33,8 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [notificationAnchor, setNotificationAnchor] = React.useState<null | HTMLElement>(null);
+  
+  const { user, logout, isAuthenticated } = useAuth();
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -44,9 +49,29 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
     setNotificationAnchor(null);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    window.location.href = '/login';
+  const handleLogout = async () => {
+    handleMenuClose();
+    await logout();
+  };
+
+  const getRoleColor = (role: string) => {
+    const colors: Record<string, string> = {
+      'Admin': '#f44336',
+      'Risk Manager': '#ff9800', 
+      'Analyst': '#2196f3',
+      'Viewer': '#4caf50',
+      'Service': '#9c27b0'
+    };
+    return colors[role] || '#666';
+  };
+
+  const getAvatarInitials = (fullName: string) => {
+    return fullName
+      .split(' ')
+      .map(name => name.charAt(0))
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
   };
 
   return (
@@ -96,20 +121,46 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             </Badge>
           </IconButton>
 
-          {/* Profile Menu */}
-          <IconButton
-            size="large"
-            edge="end"
-            aria-label="account of current user"
-            aria-controls="primary-search-account-menu"
-            aria-haspopup="true"
-            onClick={handleProfileMenuOpen}
-            color="inherit"
-          >
-            <Avatar sx={{ width: 32, height: 32, bgcolor: 'rgba(255,255,255,0.2)' }}>
-              <AccountCircleIcon />
-            </Avatar>
-          </IconButton>
+          {/* User Info & Profile Menu */}
+          {isAuthenticated && user && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {user.fullName}
+                </Typography>
+                <Chip 
+                  label={user.role}
+                  size="small"
+                  sx={{ 
+                    height: 18,
+                    fontSize: '0.65rem',
+                    bgcolor: getRoleColor(user.role),
+                    color: 'white',
+                    fontWeight: 600
+                  }}
+                />
+              </Box>
+              <IconButton
+                size="large"
+                edge="end"
+                aria-label="account of current user"
+                aria-controls="primary-search-account-menu"
+                aria-haspopup="true"
+                onClick={handleProfileMenuOpen}
+                color="inherit"
+              >
+                <Avatar sx={{ 
+                  width: 36, 
+                  height: 36, 
+                  bgcolor: getRoleColor(user.role),
+                  fontSize: '0.9rem',
+                  fontWeight: 600
+                }}>
+                  {getAvatarInitials(user.fullName)}
+                </Avatar>
+              </IconButton>
+            </Box>
+          )}
         </Box>
 
         {/* Profile Menu Dropdown */}
@@ -134,6 +185,44 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             },
           }}
         >
+          {/* User Info Header */}
+          {user && (
+            <>
+              <Box sx={{ p: 2, bgcolor: 'grey.50' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{ 
+                    bgcolor: getRoleColor(user.role),
+                    fontWeight: 600
+                  }}>
+                    {getAvatarInitials(user.fullName)}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {user.fullName}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      {user.email}
+                    </Typography>
+                    <Box sx={{ mt: 0.5 }}>
+                      <Chip 
+                        label={user.role}
+                        size="small"
+                        sx={{ 
+                          height: 20,
+                          fontSize: '0.7rem',
+                          bgcolor: getRoleColor(user.role),
+                          color: 'white',
+                          fontWeight: 600
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+              <Divider />
+            </>
+          )}
+          
           <MenuItem onClick={handleMenuClose}>
             <ListItemIcon>
               <DashboardIcon fontSize="small" />
@@ -142,7 +231,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </MenuItem>
           <MenuItem onClick={handleMenuClose}>
             <ListItemIcon>
-              <AccountCircleIcon fontSize="small" />
+              <PersonIcon fontSize="small" />
             </ListItemIcon>
             <ListItemText primary="Profile" />
           </MenuItem>
@@ -153,11 +242,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             <ListItemText primary="Settings" />
           </MenuItem>
           <Divider />
-          <MenuItem onClick={handleLogout}>
+          <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
             <ListItemIcon>
-              <LogoutIcon fontSize="small" />
+              <LogoutIcon fontSize="small" color="error" />
             </ListItemIcon>
-            <ListItemText primary="Logout" />
+            <ListItemText primary="Sign Out" />
           </MenuItem>
         </Menu>
 
