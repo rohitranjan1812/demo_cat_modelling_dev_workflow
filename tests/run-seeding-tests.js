@@ -8,6 +8,7 @@ require('dotenv').config();
 const { MongoMemoryServer } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
 const path = require('path');
+const fs = require('fs');
 
 // Import models with correct paths
 const Account = require(path.join(__dirname, '../src/models/Account'));
@@ -368,9 +369,8 @@ async function main() {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`⏱️  Total execution time: ${elapsed} seconds\n`);
     
-    // Save report
-    const fs = require('fs');
-    const reportPath = `./test-report-${Date.now()}.json`;
+    // Save report to tests directory for consistency
+    const reportPath = path.join(__dirname, `test-report-${Date.now()}.json`);
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
     console.log(`💾 Detailed report saved to: ${reportPath}\n`);
     
