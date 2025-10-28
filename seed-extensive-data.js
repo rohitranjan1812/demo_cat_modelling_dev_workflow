@@ -134,34 +134,50 @@ async function generateHazards(count) {
     hazards.push({
       hazardId: `HAZ-${String(startId + i).padStart(8, '0')}`,
       hazardName: `${hazardType} Zone ${country} ${i + 1}`,
+      hazardDescription: `${hazardType} risk zone in ${country}`,
       hazardType,
-      description: `${hazardType} risk zone in ${country}`,
-      geographicFootprint: {
-        type: 'Polygon',
-        coordinates: [[
-          [coords.longitude, coords.latitude],
-          [coords.longitude + 0.1, coords.latitude],
-          [coords.longitude + 0.1, coords.latitude + 0.1],
-          [coords.longitude, coords.latitude + 0.1],
-          [coords.longitude, coords.latitude]
-        ]]
+      hazardCategory: 'Natural',
+      severity: randomItem(['Minor', 'Moderate', 'Major', 'Severe', 'Catastrophic']),
+      probability: randomFloat(0.001, 0.5, 4),
+      
+      // Use correct footprint schema
+      footprint: {
+        centerLatitude: coords.latitude,
+        centerLongitude: coords.longitude,
+        radius: randomFloat(10, 500),
+        unit: 'km',
+        affectedArea: randomFloat(100, 10000),
+        areaUnit: 'km2'
       },
-      intensity: {
-        scale: randomItem(['Richter', 'Saffir-Simpson', 'Fujita', 'MMI']),
+      
+      // Use correct temporal schema
+      temporal: {
+        startTime: randomDate(new Date(2020, 0, 1), new Date(2024, 11, 31)),
+        duration: randomInt(1, 72),
+        durationUnit: 'hours'
+      },
+      
+      // Use correct intensity schema
+      intensityMetrics: {
+        scale: randomItem(['Richter', 'Saffir-Simpson', 'Fujita', 'Enhanced Fujita']),
         value: randomFloat(1, 10),
-        unit: randomItem(['magnitude', 'category', 'scale'])
+        unit: randomItem(['Magnitude', 'Category', 'Scale']),
+        description: `${hazardType} intensity level`
       },
-      probability: {
-        annualProbability: randomFloat(0.001, 0.5, 4),
-        returnPeriod: randomInt(10, 1000),
-        confidenceLevel: randomFloat(0.7, 0.99, 2)
+      
+      // Use correct economic impact schema
+      economicImpact: {
+        totalLoss: randomFloat(1000000, 1000000000, 0),
+        insuredLoss: randomFloat(500000, 500000000, 0),
+        currency: 'USD',
+        impactTypes: ['Property Damage', 'Business Interruption']
       },
-      historicalData: {
-        lastOccurrence: randomDate(new Date(1900, 0, 1), new Date(2024, 11, 31)),
-        frequency: randomInt(1, 100),
-        averageLoss: randomFloat(100000, 100000000, 0)
-      },
-      status: randomItem(['Active', 'Active', 'Active', 'Inactive', 'Under Review'])
+      
+      isHistorical: randomItem([true, false]),
+      isActive: true,
+      status: 'Active',
+      createdBy: 'seed-script',
+      lastModifiedBy: 'seed-script'
     });
 
     if ((i + 1) % 5000 === 0) {
@@ -178,58 +194,92 @@ async function generateVulnerabilities(count) {
   const startId = 10000001;
   
   for (let i = 0; i < count; i++) {
-    const hazardType = randomItem(HAZARD_TYPES);
-    const occupancyType = randomItem(OCCUPANCY_TYPES);
+    const country = randomItem(COUNTRIES);
+    const coords = generateLatLon(country);
     
     vulnerabilities.push({
       vulnerabilityId: `VUL-${String(startId + i).padStart(8, '0')}`,
       vulnerabilityName: `${occupancyType} ${hazardType} Vulnerability ${i + 1}`,
-      hazardType,
-      description: `Vulnerability assessment for ${occupancyType} structures against ${hazardType}`,
-      structureType: occupancyType,
-      constructionType: randomItem(CONSTRUCTION_TYPES),
-      yearBuilt: randomInt(1950, 2024),
-      damageStates: [
+      vulnerabilityDescription: `Vulnerability assessment for ${occupancyType} structures against ${hazardType}`,
+      vulnerabilityType: 'Physical',
+      vulnerabilityCategory: randomItem(['Regional', 'Community', 'Individual']),
+      
+      // Geographic scope with proper schema
+      geographicScope: {
+        centerLatitude: coords.latitude,
+        centerLongitude: coords.longitude,
+        radius: randomFloat(10, 100),
+        radiusUnit: 'km',
+        country: country,
+        region: randomItem(['North America', 'Europe', 'Asia Pacific', 'Latin America']),
+        administrativeLevel: 'Regional'
+      },
+      
+      // Vulnerability factors
+      vulnerabilityFactors: [
         {
-          state: 'Minor',
-          damageRatio: randomFloat(0.01, 0.1, 3),
-          repairCost: randomFloat(1000, 50000, 0),
-          downtimedays: randomInt(1, 30)
+          factorType: 'Physical',
+          factorName: 'Construction Type',
+          factorValue: randomFloat(5, 10),
+          weight: 0.4,
+          unit: 'score',
+          description: `${randomItem(CONSTRUCTION_TYPES)} construction`,
+          dataSource: 'Site Survey'
         },
         {
-          state: 'Moderate',
-          damageRatio: randomFloat(0.1, 0.3, 3),
-          repairCost: randomFloat(50000, 200000, 0),
-          downtimedays: randomInt(30, 90)
+          factorType: 'Environmental',
+          factorName: 'Location Exposure',
+          factorValue: randomFloat(5, 10),
+          weight: 0.3,
+          unit: 'score',
+          description: 'Geographic risk exposure',
+          dataSource: 'GIS Analysis'
         },
         {
-          state: 'Severe',
-          damageRatio: randomFloat(0.3, 0.7, 3),
-          repairCost: randomFloat(200000, 1000000, 0),
-          downtimedays: randomInt(90, 365)
-        },
-        {
-          state: 'Complete',
-          damageRatio: randomFloat(0.7, 1.0, 3),
-          repairCost: randomFloat(1000000, 10000000, 0),
-          downtimedays: randomInt(365, 730)
+          factorType: 'Physical',
+          factorName: 'Building Age',
+          factorValue: randomFloat(3, 9),
+          weight: 0.3,
+          unit: 'score',
+          description: `Built in ${randomInt(1950, 2024)}`,
+          dataSource: 'Building Records'
         }
       ],
-      vulnerabilityCurve: {
-        curveType: 'Fragility',
-        parameters: {
-          beta: randomFloat(0.3, 0.8, 2),
-          median: randomFloat(0.1, 0.5, 2)
-        }
+      
+      // Overall scoring
+      overallVulnerabilityScore: randomFloat(5, 10, 1),
+      overallRiskLevel: randomItem(['Low', 'Medium', 'High', 'Very High']),
+      confidenceLevel: randomItem(['Low', 'Medium', 'High']),
+      
+      // Assessment details
+      assessmentDate: randomDate(new Date(2020, 0, 1), new Date(2024, 11, 31)),
+      assessmentPeriod: {
+        startDate: randomDate(new Date(2020, 0, 1), new Date(2024, 0, 1)),
+        endDate: randomDate(new Date(2024, 0, 1), new Date(2024, 11, 31))
       },
+      assessmentFrequency: randomItem(['Annual', 'Biennial', 'Triennial']),
+      
+      // Status
+      status: 'Active',
+      isValidated: randomItem([true, false]),
+      
+      // Metadata
+      createdBy: 'seed-script',
+      lastModifiedBy: 'seed-script',
+      
+      // Mitigation measures
       mitigationMeasures: [
         {
-          measure: randomItem(['Retrofitting', 'Reinforcement', 'Foundation improvement', 'Structural upgrade']),
+          measureName: randomItem(['Retrofitting', 'Reinforcement', 'Foundation improvement', 'Structural upgrade']),
+          measureType: 'Structural',
           effectiveness: randomFloat(0.2, 0.8, 2),
-          cost: randomFloat(10000, 500000, 0)
+          cost: randomFloat(10000, 500000, 0),
+          currency: 'USD',
+          implementationTime: randomInt(30, 180),
+          implementationComplexity: randomItem(['Low', 'Medium', 'High']),
+          status: randomItem(['Planned', 'In Progress', 'Completed'])
         }
-      ],
-      status: randomItem(['Active', 'Active', 'Active', 'Inactive', 'Under Review'])
+      ]
     });
 
     if ((i + 1) % 5000 === 0) {
