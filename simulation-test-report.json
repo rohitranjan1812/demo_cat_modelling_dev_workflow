@@ -1,12 +1,12 @@
 {
   "testName": "Simulation User Journey Test",
-  "startTime": "2025-10-28T21:18:43.280Z",
+  "startTime": "2025-10-29T21:19:19.589Z",
   "steps": [
     {
       "step": 1,
       "action": "Launch browser",
       "status": "Success",
-      "timestamp": "2025-10-28T21:18:44.098Z"
+      "timestamp": "2025-10-29T21:19:20.553Z"
     },
     {
       "step": 2,
@@ -14,7 +14,7 @@
       "url": "http://localhost:3000",
       "status": "Success",
       "screenshot": "screenshot-01-login-page.png",
-      "timestamp": "2025-10-28T21:18:47.465Z"
+      "timestamp": "2025-10-29T21:19:24.041Z"
     },
     {
       "step": 3,
@@ -25,51 +25,42 @@
         "screenshot-02-before-login.png",
         "screenshot-03-after-login.png"
       ],
-      "timestamp": "2025-10-28T21:18:51.551Z"
+      "timestamp": "2025-10-29T21:19:28.116Z"
     },
     {
       "step": 4,
       "action": "Navigate to Simulations",
-      "status": "Success",
-      "screenshot": "screenshot-04-simulations-page.png",
-      "timestamp": "2025-10-28T21:18:53.897Z"
+      "status": "Failed",
+      "error": "Waiting for element to be located By(xpath, //*[contains(text(), 'Simulation') or contains(text(), 'simulation')])\nWait timed out after 10036ms",
+      "timestamp": "2025-10-29T21:19:38.154Z"
     },
     {
       "step": 5,
       "action": "Click Start Simulation",
-      "usedSelector": "//button[contains(text(), 'Start')]",
-      "status": "Success",
-      "detectedErrors": [
-        {
-          "pattern": "/failed/i",
-          "severity": "High"
-        }
-      ],
-      "screenshots": [
-        "screenshot-06-before-start.png",
-        "screenshot-07-after-start-click.png"
-      ],
-      "timestamp": "2025-10-28T21:18:56.835Z"
+      "status": "Failed",
+      "error": "Could not find Start Simulation button with any known selector",
+      "screenshot": "screenshot-08-start-error.png",
+      "timestamp": "2025-10-29T21:19:41.007Z"
     }
   ],
   "bugs": [
     {
-      "step": "Start Simulation Click",
+      "step": "Navigate to Simulations",
+      "severity": "High",
+      "description": "Could not find Simulations navigation link",
+      "error": "Waiting for element to be located By(xpath, //*[contains(text(), 'Simulation') or contains(text(), 'simulation')])\nWait timed out after 10036ms"
+    },
+    {
+      "step": "Start Simulation",
       "severity": "Critical",
-      "description": "Errors detected after clicking Start Simulation",
-      "detectedErrors": [
-        {
-          "pattern": "/failed/i",
-          "severity": "High"
-        }
-      ],
-      "bodyContent": "CAT Modeling Platform\n3\nRisk Manager\nAnalyst\nRM\nCAT Platform\nRisk Assessment & Simulation\nDashboard\nHazards\n12\nVulnerabilities\n8\nSimulations\n3\nIntegration\nAccounts\nTOOLS & REPORTS\nAnalytics\nMaps\nReports\nSettings\nv1.0.0 • CAT Modeling Platform\nSimulation Management\nConfigure and monitor catastrophe modeling simulations\nExport\nStart Simulation\nFilters\nAll Simulations\nRunning\nCompleted\nFailed\nNo simulations found\nStart a new simulation to begin risk assessment.",
-      "screenshot": "screenshot-07-after-start-click.png"
+      "description": "Failed to start simulation - button not found or not clickable",
+      "error": "Could not find Start Simulation button with any known selector",
+      "screenshot": "screenshot-08-start-error.png"
     },
     {
       "step": "Browser Console Check",
       "severity": "High",
-      "description": "Found 6 browser console errors/warnings",
+      "description": "Found 10 browser console errors/warnings",
       "consoleErrors": [
         {
           "level": "WARNING",
@@ -85,20 +76,36 @@
         },
         {
           "level": "SEVERE",
-          "message": "http://localhost:3000/static/js/bundle.js 32601:16 \"MUI: You are providing a disabled `button` child to the Tooltip component.\\nA disabled element does not fire events.\\nTooltip needs to listen to the child element's events to display the title.\\n\\nAdd a simple wrapper element, such as a `span`.\""
+          "message": "http://localhost:3001/api/v1/auth/login - Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "level": "WARNING",
+          "message": "http://localhost:3000/static/js/bundle.js 152489:12 \"⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.\""
+        },
+        {
+          "level": "WARNING",
+          "message": "http://localhost:3000/static/js/bundle.js 152489:12 \"⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.\""
         },
         {
           "level": "SEVERE",
-          "message": "http://localhost:3000/static/js/bundle.js 32601:16 \"MUI: You are providing a disabled `button` child to the Tooltip component.\\nA disabled element does not fire events.\\nTooltip needs to listen to the child element's events to display the title.\\n\\nAdd a simple wrapper element, such as a `span`.\""
+          "message": "http://localhost:3000/login - Error while trying to use the following icon from the Manifest: http://localhost:3000/logo192.png (Download error or resource isn't a valid image)"
+        },
+        {
+          "level": "WARNING",
+          "message": "http://localhost:3000/static/js/bundle.js 152489:12 \"⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.\""
+        },
+        {
+          "level": "WARNING",
+          "message": "http://localhost:3000/static/js/bundle.js 152489:12 \"⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.\""
         },
         {
           "level": "SEVERE",
-          "message": "http://localhost:3000/static/js/bundle.js 32601:16 \"MUI: You are providing a disabled `button` child to the Tooltip component.\\nA disabled element does not fire events.\\nTooltip needs to listen to the child element's events to display the title.\\n\\nAdd a simple wrapper element, such as a `span`.\""
+          "message": "http://localhost:3000/simulations - Error while trying to use the following icon from the Manifest: http://localhost:3000/logo192.png (Download error or resource isn't a valid image)"
         }
       ]
     }
   ],
   "screenshots": [],
   "status": "Completed",
-  "endTime": "2025-10-28T21:18:56.842Z"
+  "endTime": "2025-10-29T21:19:41.013Z"
 }

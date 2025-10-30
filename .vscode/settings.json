@@ -13,5 +13,5 @@
       "color": "terminal.ansiBlue"
     }
   },
-  "terminal.integrated.defaultProfile.windows": "cursor-backend"
+  "terminal.integrated.defaultProfile.windows": "Git Bash"
 }

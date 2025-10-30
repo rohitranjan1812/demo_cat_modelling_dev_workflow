@@ -24,10 +24,13 @@ class TestEnvironment {
       await mongoose.connect(testDbUri, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 5000,
-        connectTimeoutMS: 10000,
+        serverSelectionTimeoutMS: 10000, // Increased from 5000
+        connectTimeoutMS: 30000, // Increased from 10000
+        socketTimeoutMS: 45000, // Add socket timeout
         maxPoolSize: 10,
-        minPoolSize: 1
+        minPoolSize: 1,
+        bufferMaxEntries: 0, // Disable mongoose buffering
+        bufferCommands: false // Disable mongoose buffering
       });
       
       // Create database indexes to ensure unique constraints work

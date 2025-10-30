@@ -166,16 +166,36 @@ const SimulationForm: React.FC<SimulationFormProps> = ({ simulation, open, onClo
     onClose();
   };
 
+  // Ensure component doesn't render if not open (early return for debugging)
+  if (!open) {
+    console.log('🟡 SimulationForm: open=false, not rendering Dialog');
+    return null;
+  }
+
+  console.log('🟢 SimulationForm: Rendering Dialog with open=true');
+
   return (
     <Dialog
       open={open}
       onClose={handleClose}
       maxWidth="lg"
       fullWidth
+      disableEscapeKeyDown={false}
       PaperProps={{
         sx: {
           borderRadius: 2,
           boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          zIndex: 1300, // Ensure it's above other elements
+          position: 'relative',
+        },
+      }}
+      sx={{
+        zIndex: 1300, // MUI Dialog default is 1300, but explicit is better
+      }}
+      BackdropProps={{
+        sx: {
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 1299,
         },
       }}
     >

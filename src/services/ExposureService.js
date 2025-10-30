@@ -437,6 +437,173 @@ class ExposureService extends BaseService {
   }
 
   /**
+   * Aggregate all exposures for a specific account with detailed breakdown
+   * @param {String} accountId - Account ID
+   * @param {Object} options - Aggregation options
+   * @returns {Promise<Object>} Aggregated exposure summary
+   */
+  async aggregateAccountExposures(accountId, options = {}) {
+    try {
+      const { includeChildAccounts = false, asOfDate = new Date() } = options;
+      
+      // Get account exposures
+      const exposures = await this.getActiveExposuresForAccount(accountId, asOfDate);
+      
+      // If including child accounts, get those too
+      let childExposures = [];
+      if (includeChildAccounts) {
+        const Account = require('../models/Account');
+        const account = await Account.findOne({ accountId });
+        if (account) {
+          const childAccounts = await account.getChildAccounts();
+          for (const childAccount of childAccounts) {
+            const childExps = await this.getActiveExposuresForAccount(childAccount.accountId, asOfDate);
+            childExposures = childExposures.concat(childExps.data || []);
+          }
+        }
+      }
+
+      const allExposures = [...(exposures.data || []), ...childExposures];
+      
+      // Aggregate by type
+      const byType = {
+        residential: { count: 0, value: 0 },
+        commercial: { count: 0, value: 0 },
+        industrial: { count: 0, value: 0 },
+        infrastructure: { count: 0, value: 0 }
+      };
+
+      // Aggregate by region
+      const byRegion = {};
+      
+      // Aggregate by peril
+      const byPeril = {};
+
+      let totalValue = 0;
+      let totalCount = 0;
+
+      allExposures.forEach(exposure => {
+        totalCount++;
+        totalValue += exposure.totalInsuredValue || 0;
+        
+        // By type
+        const type = exposure.occupancyType || 'residential';
+        if (byType[type]) {
+          byType[type].count++;
+          byType[type].value += exposure.totalInsuredValue || 0;
+        }
+        
+        // By region
+        const region = exposure.location?.address?.region || 'Unknown';
+        if (!byRegion[region]) {
+          byRegion[region] = { count: 0, value: 0 };
+        }
+        byRegion[region].count++;
+        byRegion[region].value += exposure.totalInsuredValue || 0;
+        
+        // By peril
+        if (exposure.perilExposure) {
+          exposure.perilExposure.forEach(pe => {
+            if (!pe.isExcluded) {
+              if (!byPeril[pe.peril]) {
+                byPeril[pe.peril] = { count: 0, value: 0 };
+              }
+              byPeril[pe.peril].count++;
+              byPeril[pe.peril].value += pe.exposureValue || 0;
+            }
+          });
+        }
+      });
+
+      return {
+        accountId,
+        aggregationTimestamp: new Date(),
+        totalExposures: totalCount,
+        totalValue,
+        exposuresByType: byType,
+        exposuresByRegion: byRegion,
+        exposuresByPeril: byPeril,
+        includeChildAccounts
+      };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Calculate portfolio risk aggregation across multiple accounts
+   * @param {Array<String>} accountIds - Array of account IDs
+   * @param {Object} options - Calculation options
+   * @returns {Promise<Object>} Portfolio risk summary
+   */
+  async calculatePortfolioRiskAggregation(accountIds, options = {}) {
+    try {
+      const { currency = 'USD', asOfDate = new Date() } = options;
+      
+      const portfolioSummary = {
+        totalAccounts: accountIds.length,
+        totalExposures: 0,
+        totalValue: 0,
+        byAccount: {},
+        byRegion: {},
+        byPeril: {},
+        riskMetrics: {
+          concentrationRisk: 0,
+          diversificationBenefit: 0,
+          geographicSpread: 0
+        },
+        timestamp: new Date()
+      };
+
+      // Aggregate each account
+      for (const accountId of accountIds) {
+        const accountSummary = await this.aggregateAccountExposures(accountId, { asOfDate });
+        portfolioSummary.byAccount[accountId] = accountSummary;
+        portfolioSummary.totalExposures += accountSummary.totalExposures;
+        portfolioSummary.totalValue += accountSummary.totalValue;
+        
+        // Merge regional data
+        Object.entries(accountSummary.exposuresByRegion).forEach(([region, data]) => {
+          if (!portfolioSummary.byRegion[region]) {
+            portfolioSummary.byRegion[region] = { count: 0, value: 0 };
+          }
+          portfolioSummary.byRegion[region].count += data.count;
+          portfolioSummary.byRegion[region].value += data.value;
+        });
+        
+        // Merge peril data
+        Object.entries(accountSummary.exposuresByPeril).forEach(([peril, data]) => {
+          if (!portfolioSummary.byPeril[peril]) {
+            portfolioSummary.byPeril[peril] = { count: 0, value: 0 };
+          }
+          portfolioSummary.byPeril[peril].count += data.count;
+          portfolioSummary.byPeril[peril].value += data.value;
+        });
+      }
+
+      // Calculate concentration risk (HHI)
+      const accountValues = Object.values(portfolioSummary.byAccount).map(a => a.totalValue);
+      const totalPortfolioValue = portfolioSummary.totalValue;
+      if (totalPortfolioValue > 0) {
+        const hhi = accountValues.reduce((sum, value) => {
+          const share = value / totalPortfolioValue;
+          return sum + (share * share);
+        }, 0);
+        portfolioSummary.riskMetrics.concentrationRisk = hhi;
+        portfolioSummary.riskMetrics.diversificationBenefit = Math.max(0, 1 - hhi);
+      }
+
+      // Calculate geographic spread
+      const uniqueRegions = Object.keys(portfolioSummary.byRegion).length;
+      portfolioSummary.riskMetrics.geographicSpread = uniqueRegions;
+
+      return portfolioSummary;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Calculate expected loss for exposures given hazard scenarios
    * @param {Array} exposures - Array of exposure objects
    * @param {Object} hazardScenario - Hazard scenario details

@@ -1,6 +1,7 @@
 const HazardService = require('../services/HazardService');
 const Hazard = require('../models/Hazard');
 const { useMockDB, mockResponses } = require('../middleware/mockDataHandler');
+const ResponseFormatter = require('../utils/ResponseFormatter');
 
 // Hazard Controller
 class HazardController {
@@ -23,10 +24,17 @@ class HazardController {
         maxProbability,
         isHistorical,
         isSimulated,
-        status = 'Active'
+        status
       } = req.query;
 
-      const filter = { status };
+      // Only filter by status if explicitly provided, otherwise return all active and inactive
+      const filter = {};
+      if (status) {
+        filter.status = status;
+      } else {
+        // Default: return Active hazards, but allow all if no status filter
+        filter.status = { $in: ['Active', 'Inactive', 'Pending'] };
+      }
       
       if (hazardType) filter.hazardType = hazardType;
       if (hazardCategory) filter.hazardCategory = hazardCategory;
@@ -50,22 +58,10 @@ class HazardController {
 
       const total = await Hazard.countDocuments(filter);
 
-      res.json({
-        success: true,
-        data: hazards,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / limit)
-        }
-      });
+      res.json(ResponseFormatter.paginated(hazards, page, limit, total, 'Hazards retrieved successfully'));
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error fetching hazards',
-        error: error.message
-      });
+      console.error('Error fetching hazards:', error);
+      res.status(500).json(ResponseFormatter.serverError(error, 'Error fetching hazards'));
     }
   }
 
@@ -83,22 +79,13 @@ class HazardController {
       const hazard = await Hazard.findOne({ hazardId: id });
 
       if (!hazard) {
-        return res.status(404).json({
-          success: false,
-          message: 'Hazard not found'
-        });
+        return res.status(404).json(ResponseFormatter.notFound('Hazard', id));
       }
 
-      res.json({
-        success: true,
-        data: hazard
-      });
+      res.json(ResponseFormatter.success(hazard, 'Hazard retrieved successfully'));
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error fetching hazard',
-        error: error.message
-      });
+      console.error('Error fetching hazard:', error);
+      res.status(500).json(ResponseFormatter.serverError(error, 'Error fetching hazard'));
     }
   }
 
